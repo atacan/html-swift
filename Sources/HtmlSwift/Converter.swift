@@ -218,7 +218,7 @@ public class Converter {
         case "sandbox":
             EmptyProperty(node: attribute).build()
         case "scope":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Scope>(node: attribute).build()
         case "shape":
             TypeProperty<Shape>(node: attribute).build()
         case "size":

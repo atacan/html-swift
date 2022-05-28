@@ -3,6 +3,17 @@
 //
 // Based on https://github.com/vapor-community/HTMLKit/blob/main/Sources/HTMLKit/Internal/Features/Conversion/Converter.swift
 
+enum Scope: String {
+    /// Specifies that the cell is a header for a column
+    case col
+    /// Specifies that the cell is a header for a row
+    case row
+    /// Specifies that the cell is a header for a group of columns
+    case colgroup
+    /// Specifies that the cell is a header for a group of rows
+    case rowgroup
+}
+
 /// A name for a element.
 ///
 /// ```html
