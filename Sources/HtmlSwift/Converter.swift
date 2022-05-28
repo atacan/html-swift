@@ -77,7 +77,7 @@ public class Converter {
         case "cols":
             ValueProperty(node: attribute).build()
         case "colspan":
-            ValueProperty(node: attribute).build()
+            ValueIntegerProperty(node: attribute).build()
         case "content":
             ValueProperty(node: attribute).build()
         case "contenteditable":
@@ -726,6 +726,57 @@ extension Converter {
             return ""
         }
         
+    }
+    
+    private struct ValueIntegerProperty{
+        
+        private var name: String? {
+            
+            guard let name = node.name else {
+                return nil
+            }
+            
+            return name
+        }
+        
+        private var value: String? {
+            guard let value = node.stringValue else {
+                return nil
+            }
+            
+            return value
+        }
+        
+        private let node: XMLNode
+        
+        internal init(node: XMLNode) {
+            self.node = node
+        }
+        
+        @StringBuilder internal func build() -> String {
+            
+            if let name = name, let value = value {
+                if let intValue = Int(value){
+                    ".\(name)(\(intValue))\n"
+                }
+                
+            } else if let name = name{
+                
+                ".\(name)()"
+            }
+        }
+        
+        @StringBuilder internal func build(verbatim: String? = nil) -> String {
+            
+            if let verbatim = verbatim, let value = value {
+                
+                ".\(verbatim)(\"\(value)\")\n"
+                
+            } else if let verbatim = verbatim {
+                
+                ".\(verbatim)()"
+            }
+        }
     }
     
     private struct ValueProperty{
