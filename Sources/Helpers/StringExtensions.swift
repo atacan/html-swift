@@ -1,8 +1,12 @@
-//
-//  File.swift
-//  
-//
-//  Created by Atacan Durmusoglu on 28.05.22.
-//
+// https://github.com/atacan/
+// 28.05.22
+    
 
-import Foundation
+extension String {
+    /// keep the single space, while removing whitespaces. Because CharacterSet.whitespaces includes also the single space
+    func condensingWhitespace() -> String {
+        return self.components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
+}
