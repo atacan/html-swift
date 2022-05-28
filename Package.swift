@@ -17,13 +17,15 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         .package(url: "https://github.com/binarybirds/swift-html", from: "1.6.0"),
+        .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.49.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "HtmlSwift",
-            dependencies: [.product(name: "SwiftHtml", package: "swift-html"),]),
+            dependencies: [.product(name: "SwiftHtml", package: "swift-html"),
+                           .product(name: "SwiftFormat", package: "SwiftFormat"),]),
         .testTarget(
             name: "HtmlSwiftTests",
             dependencies: ["HtmlSwift"]),
