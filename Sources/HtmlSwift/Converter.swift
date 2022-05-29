@@ -50,9 +50,7 @@ public class Converter {
         switch attribute.localName {
         // MARK: - Bool
 
-        case "async", "autocomplete", "checked", "contenteditable":
-            ValueBasicTypeProperty<Bool>(node: attribute).build()
-        case "spellcheck":
+        case "async", "autocomplete", "checked", "contenteditable", "spellcheck":
             ValueBasicTypeProperty<Bool>(node: attribute).build()
         
         // MARK: - Int
