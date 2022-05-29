@@ -10,12 +10,11 @@ import Foundation
 import FoundationXML
 #endif
 
-import SwiftHtml
 import SwiftFormat
+import SwiftHtml
 
 @available(macOS 11.0, *)
 public class Converter {
-    
     public enum Extension: String {
         case html
         case leaf
@@ -48,27 +47,31 @@ public class Converter {
     }
     
     @StringBuilder private func decode(attribute: XMLNode) -> String {
-        
         switch attribute.localName {
         // MARK: - Bool
+
         case "async", "autocomplete", "checked", "contenteditable":
             ValueBasicTypeProperty<Bool>(node: attribute).build()
         case "spellcheck":
             ValueBasicTypeProperty<Bool>(node: attribute).build()
         
         // MARK: - Int
+
         case "cols", "colspan", "high", "low", "optimum", "rows", "rowspan", "size", "span", "step", "tabindex":
             ValueBasicTypeProperty<Int>(node: attribute).build()
         
         // MARK: - Double
+
         case "height", "width":
             ValueBasicTypeProperty<Double>(node: attribute).build()
         
         // MARK: - No Value
+
         case "autofocus", "autoplay", "controls", "default", "defer", "disabled", "download", "hidden", "ismap", "loop", "multiple", "muted", "novalidate", "readonly", "required", "selected":
             EmptyProperty(node: attribute).build()
         
         // MARK: - Custom Type
+
         case "autocapitalize":
             TypeProperty<Capitalization>(node: attribute).build()
         case "dir":
@@ -84,14 +87,14 @@ public class Converter {
         case "method":
             TypeProperty<SwiftHtml.Method>(node: attribute).build()
         case "name":
-           if let parent = attribute.parent {
-               switch parent.localName {
-               case "meta":
-                   TypeProperty<Meta.Name>(node: attribute).build()
-               default:
-                   ValueProperty(node: attribute).build()
-               }
-           }
+            if let parent = attribute.parent {
+                switch parent.localName {
+                case "meta":
+                    TypeProperty<Meta.Name>(node: attribute).build()
+                default:
+                    ValueProperty(node: attribute).build()
+                }
+            }
         case "preload":
             TypeProperty<Audio.Preload>(node: attribute).build()
         case "referrerpolicy":
@@ -114,7 +117,6 @@ public class Converter {
             TypeProperty<Translate>(node: attribute).build()
         case "type":
             if let parent = attribute.parent {
-                
                 switch parent.localName {
                 case "input":
                     TypeProperty<Input.`Type`>(node: attribute).build()
@@ -134,6 +136,7 @@ public class Converter {
             TypeProperty<Textarea.Wrap>(node: attribute).build()
         
         // MARK: - String
+
         case "accesskey", "accept", "action", "alt", "cite", "class", "content", "data", "datetime", "for", "form", "formaction", "headers", "href", "hreflang", "id", "label", "lang", "list", "max", "media", "min", "open", "pattern", "ping", "placeholder", "poster", "sizes", "src", "style", "title", "value", "charset":
             ValueProperty(node: attribute).build()
         
@@ -145,36 +148,12 @@ public class Converter {
         case "enterkeyhint", "inputmode", "is", "itemid", "itemproperty", "itemref", "itemscope", "itemtype", "nonce", "part", "role", "slot", "property":
             ValueProperty(node: attribute).build()
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-            
-        
-        
-            
-        
-        
-        
-        
-        
         default:
             CustomProperty(node: attribute).build()
         }
     }
     
     @StringBuilder private func decode(element: XMLNode) -> String {
-        
         switch element.kind {
         case .text:
             
@@ -187,7 +166,6 @@ public class Converter {
         default:
             
             if let element = element as? XMLElement {
-                
                 switch element.localName {
                 case "img":
                     ImageElement(element: element).build()
@@ -203,7 +181,6 @@ public class Converter {
                     } else {
                         EmptyElement(element: element).build()
                     }
-                    
                 }
             }
         }
@@ -212,11 +189,8 @@ public class Converter {
 
 @available(macOS 11.0, *)
 extension Converter {
-    
     private struct CommentElement {
-        
         private var comment: String? {
-            
             guard let comment = node.stringValue else {
                 return nil
             }
@@ -231,20 +205,14 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-            
-            
-            if let comment = comment
-            {
+            if let comment = comment {
                 "Comment(\"\(comment)\")\n"
             }
         }
     }
     
     private struct TextElement {
-        
         private var text: String? {
-            
             guard let text = node.stringValue else {
                 return nil
             }
@@ -259,13 +227,10 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-            
-            
             if let text = text {
                 if node.parent?.localName != "pre" {
                     let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        .condensingWhitespace()
+                        .condensingWhitespace()
                     if cleanText.contains("\"") {
                         "Text(#\"\(cleanText)\")#\n"
                     } else {
@@ -279,9 +244,7 @@ extension Converter {
     }
     
     private struct ArgumentElement {
-        
         private var text: String? {
-            
             guard let text = node.stringValue else {
                 return nil
             }
@@ -296,13 +259,10 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-            
-            
             if let text = text {
                 if node.parent?.localName != "pre" {
                     let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        .condensingWhitespace()
+                        .condensingWhitespace()
                     if cleanText.contains("\"") {
                         "#\"\(cleanText)\"#\n"
                     } else {
@@ -316,9 +276,7 @@ extension Converter {
     }
     
     private struct ContentTextElement {
-        
         private var name: String? {
-            
             guard let name = element.name else {
                 return nil
             }
@@ -327,18 +285,16 @@ extension Converter {
         }
         
         private var attributes: [String]? {
-            
             guard let attributes = element.attributes else {
                 return nil
             }
             
             return attributes.map { attribute in
-                return Converter.default.decode(attribute: attribute)
+                Converter.default.decode(attribute: attribute)
             }
         }
         
         private var content: [String]? {
-            
             guard let children = element.children else {
                 return nil
             }
@@ -359,11 +315,7 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-
-            
             if let name = name {
-                
                 "\(name)("
                 
                 if let content = content {
@@ -379,11 +331,7 @@ extension Converter {
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
-
-            
             if let verbatim = verbatim {
-                
                 "\(verbatim) {\n"
                 
                 if let content = content {
@@ -400,9 +348,7 @@ extension Converter {
     }
     
     private struct ContentElement {
-        
         private var name: String? {
-            
             guard let name = element.name else {
                 return nil
             }
@@ -411,24 +357,22 @@ extension Converter {
         }
         
         private var attributes: [String]? {
-            
             guard let attributes = element.attributes else {
                 return nil
             }
             
             return attributes.map { attribute in
-                return Converter.default.decode(attribute: attribute)
+                Converter.default.decode(attribute: attribute)
             }
         }
         
         private var content: [String]? {
-            
             guard let children = element.children else {
                 return nil
             }
             
             return children.map { child in
-                return Converter.default.decode(element: child)
+                Converter.default.decode(element: child)
             }
         }
         
@@ -443,11 +387,7 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-
-            
             if let name = name {
-                
                 "\(name) {\n"
                 
                 if let content = content {
@@ -463,11 +403,7 @@ extension Converter {
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
-
-            
             if let verbatim = verbatim {
-                
                 "\(verbatim) {\n"
                 
                 if let content = content {
@@ -484,9 +420,7 @@ extension Converter {
     }
     
     private struct EmptyElement {
-        
         private var name: String? {
-            
             guard let name = element.name else {
                 return nil
             }
@@ -495,13 +429,12 @@ extension Converter {
         }
         
         private var attributes: [String]? {
-            
             guard let attributes = element.attributes else {
                 return nil
             }
             
             return attributes.map { attribute in
-                return Converter.default.decode(attribute: attribute)
+                Converter.default.decode(attribute: attribute)
             }
         }
         
@@ -516,11 +449,7 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
-
-            
             if let name = name {
-                
                 "\(name)()\n"
                 
                 if let attributes = attributes {
@@ -530,25 +459,18 @@ extension Converter {
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
-
-            
             if let verbatim = verbatim {
-                
                 "\(verbatim)()\n"
                 
                 if let attributes = attributes {
                     "\t\(attributes.joined(separator: "\t"))"
                 }
-                
             }
         }
     }
     
     private struct ImageElement {
-        
         private var name: String? {
-            
             guard let name = element.name else {
                 return nil
             }
@@ -557,7 +479,6 @@ extension Converter {
         }
         
         private var attributes: [XMLNode]? {
-            
             guard let attributes = element.attributes else {
                 return nil
             }
@@ -576,15 +497,13 @@ extension Converter {
         }
         
         internal func build() -> String {
-
-            
             if let name = name {
                 if let attributes = attributes {
                     var output = name + "(src: \"?src?\", alt: \"?alt?\")"
                     for attribute in attributes {
-                        if attribute.name == "src"  {
+                        if attribute.name == "src" {
                             output = output.replacingOccurrences(of: "?src?", with: attribute.stringValue!)
-                        } else if attribute.name == "alt"  {
+                        } else if attribute.name == "alt" {
                             output = output.replacingOccurrences(of: "?alt?", with: attribute.stringValue!)
                         } else {
                             output += "\n" + ValueProperty(node: attribute).build()
@@ -595,13 +514,10 @@ extension Converter {
             }
             return ""
         }
-        
     }
     
     private struct LinkElement {
-        
         private var name: String? {
-            
             guard let name = element.name else {
                 return nil
             }
@@ -610,7 +526,6 @@ extension Converter {
         }
         
         private var attributes: [XMLNode]? {
-            
             guard let attributes = element.attributes else {
                 return nil
             }
@@ -629,13 +544,11 @@ extension Converter {
         }
         
         internal func build() -> String {
-
-            
             if let name = name {
                 if let attributes = attributes {
                     var output = name + "(rel: ?rel?)"
                     for attribute in attributes {
-                        if attribute.name == "rel"  {
+                        if attribute.name == "rel" {
                             if let type = Link.Rel(rawValue: attribute.stringValue!.lowercased()) {
                                 output = output.replacingOccurrences(of: "?rel?", with: ".\(type)")
                             }
@@ -648,13 +561,10 @@ extension Converter {
             }
             return ""
         }
-        
     }
     
-    private struct ValueBasicTypeProperty<T: HaveInit>{
-        
+    private struct ValueBasicTypeProperty<T: HaveInit> {
         private var name: String? {
-            
             guard let name = node.name else {
                 return nil
             }
@@ -677,35 +587,28 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
             if let name = name, let value = value {
-                if let tValue = T(value){
+                if let tValue = T(value) {
                     ".\(name)(\(tValue))\n"
                 }
                 
-            } else if let name = name{
-                
+            } else if let name = name {
                 ".\(name)()"
             }
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
             if let verbatim = verbatim, let value = value {
-                
                 ".\(verbatim)(\"\(value)\")\n"
                 
             } else if let verbatim = verbatim {
-                
                 ".\(verbatim)()"
             }
         }
     }
     
-    private struct ValueProperty{
-        
+    private struct ValueProperty {
         private var name: String? {
-            
             guard let name = node.name else {
                 return nil
             }
@@ -728,38 +631,30 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
             if let name = name, let value = value {
-                
                 if value == "false" || value == "true" {
                     ".\(name)(\(value))\n"
                 } else {
                     ".\(name)(\"\(value)\")\n"
                 }
                 
-            } else if let name = name{
-                
+            } else if let name = name {
                 ".\(name)()"
             }
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
             if let verbatim = verbatim, let value = value {
-                
                 ".\(verbatim)(\"\(value)\")\n"
                 
             } else if let verbatim = verbatim {
-                
                 ".\(verbatim)()"
             }
         }
     }
     
     private struct EmptyProperty {
-        
         private var name: String? {
-            
             guard let name = node.name else {
                 return nil
             }
@@ -774,24 +669,20 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
             if let name = name {
                 ".\(name)()\n"
             }
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
             if let verbatim = verbatim {
                 ".\(verbatim)()\n"
             }
         }
     }
     
-    private struct TypeProperty<T: RawRepresentable>{
-        
+    private struct TypeProperty<T: RawRepresentable> {
         private var name: String? {
-            
             guard let name = node.name else {
                 return nil
             }
@@ -800,8 +691,7 @@ extension Converter {
         }
         
         private var value: String? {
-            
-            guard let value = node.stringValue  else {
+            guard let value = node.stringValue else {
                 return nil
             }
             
@@ -819,34 +709,26 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
             if let name = name, let value = value {
-                
                 ".\(name)(\(value))\n"
                 
-            } else if let name = name{
-                
+            } else if let name = name {
                 ".\(name)()"
             }
         }
         
         @StringBuilder internal func build(verbatim: String? = nil) -> String {
-            
             if let verbatim = verbatim, let value = value {
-                
                 ".\(verbatim)(\(value))\n"
                 
             } else if let verbatim = verbatim {
-                
                 ".\(verbatim)()"
             }
         }
     }
     
     private struct CustomProperty {
-        
         private var name: String? {
-            
             guard let name = node.name else {
                 return nil
             }
@@ -855,7 +737,6 @@ extension Converter {
         }
         
         private var value: String? {
-            
             guard let value = node.stringValue else {
                 return nil
             }
@@ -870,11 +751,9 @@ extension Converter {
         }
         
         @StringBuilder internal func build() -> String {
-            
             if let name = name {
                 ".custom(key: \"\(name)\", value: \"\(value ?? "")\")\n"
             }
         }
     }
 }
-
