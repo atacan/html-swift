@@ -70,8 +70,6 @@ public class Converter {
         
         // MARK: - Custom Type
 
-        case "autocapitalize":
-            TypeProperty<Capitalization>(node: attribute).build()
         case "dir":
             TypeProperty<TextDirection>(node: attribute).build()
         case "draggable":
@@ -143,7 +141,7 @@ public class Converter {
             ValueProperty(node: attribute).build()
         
         // TODO: doesn't exist
-        case "enterkeyhint", "inputmode", "is", "itemid", "itemproperty", "itemref", "itemscope", "itemtype", "nonce", "part", "role", "slot", "property":
+        case "autocapitalize", "enterkeyhint", "inputmode", "is", "itemid", "itemproperty", "itemref", "itemscope", "itemtype", "nonce", "part", "role", "slot", "property":
             ValueProperty(node: attribute).build()
         
         default:
