@@ -23,6 +23,6 @@ Td {
 """#
         
         let outputSwiftCode = try Converter.default.convert(html: htmlCode)
-        XCTAssertEqual(outputSwiftCode.removeWhitespace(), targetSwiftCode.removeWhitespace())
+        XCTAssertEqual(outputSwiftCode.removingWhitespace(), targetSwiftCode.removingWhitespace())
     }
 }
