@@ -73,7 +73,7 @@ Html {
 """
 
         let swiftConverted = try Converter.default.convert(html: html)
-        XCTAssertEqual(swiftCode.removeWhitespace(), swiftConverted.removeWhitespace())
+        XCTAssertEqual(swiftCode.removingWhitespace(), swiftConverted.removingWhitespace())
     }
 }
 

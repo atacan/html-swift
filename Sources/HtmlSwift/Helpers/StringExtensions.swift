@@ -10,7 +10,7 @@ extension String {
             .joined(separator: " ")
     }
     
-    func removeWhitespace() -> String {
+    func removingWhitespace() -> String {
         return self.components(separatedBy: .whitespacesAndNewlines)
             .joined(separator: "")
     }
