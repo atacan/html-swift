@@ -3,15 +3,33 @@
 //
 // Based on https://github.com/vapor-community/HTMLKit/blob/main/Sources/HTMLKit/Internal/Features/Conversion/Converter.swift
 
-enum Scope: String {
-    /// Specifies that the cell is a header for a column
-    case col
-    /// Specifies that the cell is a header for a row
-    case row
-    /// Specifies that the cell is a header for a group of columns
-    case colgroup
-    /// Specifies that the cell is a header for a group of rows
-    case rowgroup
+import SwiftHtml
+
+enum IframeSandbox: String {
+    /// (no value)    Applies all restrictions
+    case all
+    /// Allows form submission
+    case allowForms
+    /// Allows to open modal windows
+    case allowModals
+    /// Allows to lock the screen orientation
+    case allowOrientationLock
+    /// Allows to use the Pointer Lock API
+    case allowPointerLock
+    /// Allows popups
+    case allowPopups
+    /// Allows popups to open new windows without inheriting the sandboxing
+    case allowPopupsToEscapeSandbox
+    /// Allows to start a presentation session
+    case allowPresentation
+    /// Allows the iframe content to be treated as being from the same origin
+    case allowSameOrigin
+    /// Allows to run scripts
+    case allowScripts
+    /// Allows the iframe content to navigate its top-level browsing context
+    case allowTopNavigation
+    /// Allows the iframe content to navigate its top-level browsing context, but only if initiated by user
+    case allowTopNavigationByUserActivation
 }
 
 /// A name for a element.
@@ -59,20 +77,6 @@ public enum Encoding: String {
     case multipart = "multipart/form-data"
     
     case plainText = "text/plain"
-}
-
-/// A method for the form submission.
-///
-/// ```html
-/// <form method="get"></form>
-/// ```
-public enum Method: String {
-    
-    /// Sends the form data as a post transaction.
-    case post
-    
-    /// Appends the form data to name/value pairs.
-    case get
 }
 
 /// A type of input elements.

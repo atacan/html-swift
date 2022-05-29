@@ -3,5 +3,10 @@
     
 
 protocol HaveInit {
-    init()
+    init?(_ : String)
 }
+
+
+extension Int: HaveInit {}
+extension Double: HaveInit {}
+extension Bool: HaveInit {}
