@@ -50,238 +50,124 @@ public class Converter {
     @StringBuilder private func decode(attribute: XMLNode) -> String {
         
         switch attribute.localName {
-        case "accesskey":
-            ValueProperty(node: attribute).build()
-        case "accept":
-            ValueProperty(node: attribute).build()
-        case "action":
-            ValueProperty(node: attribute).build()
-        case "alt":
-            ValueProperty(node: attribute).build()
-        case "async":
+        // MARK: - Bool
+        case "async", "autocomplete", "checked", "contenteditable":
+            ValueBasicTypeProperty<Bool>(node: attribute).build()
+        case "spellcheck":
+            ValueBasicTypeProperty<Bool>(node: attribute).build()
+        
+        // MARK: - Int
+        case "cols", "colspan", "high", "low", "optimum", "rows", "rowspan", "size", "span", "step", "tabindex":
+            ValueBasicTypeProperty<Int>(node: attribute).build()
+        
+        // MARK: - Double
+        case "height", "width":
+            ValueBasicTypeProperty<Double>(node: attribute).build()
+        
+        // MARK: - No Value
+        case "autofocus", "autoplay", "controls", "default", "defer", "disabled", "download", "hidden", "ismap", "loop", "multiple", "muted", "novalidate", "readonly", "required", "selected":
             EmptyProperty(node: attribute).build()
+        
+        // MARK: - Custom Type
         case "autocapitalize":
             TypeProperty<Capitalization>(node: attribute).build()
-        case "autocomplete":
-            ValueProperty(node: attribute).build()
-        case "autofocus":
-            EmptyProperty(node: attribute).build()
-        case "autoplay":
-            EmptyProperty(node: attribute).build()
-        case "checked":
-            EmptyProperty(node: attribute).build()
-        case "cite":
-            ValueProperty(node: attribute).build()
-        case "class":
-            ValueProperty(node: attribute).build()
-        case "cols":
-            ValueProperty(node: attribute).build()
-        case "colspan":
-            ValueIntegerProperty(node: attribute).build()
-        case "content":
-            ValueProperty(node: attribute).build()
-        case "contenteditable":
-            ValueProperty(node: attribute).build()
-        case "controls":
-            EmptyProperty(node: attribute).build()
-        case "coords":
-            ValueProperty(node: attribute).build()
-        case "data":
-            ValueProperty(node: attribute).build()
-        case "datetime":
-            ValueProperty(node: attribute).build()
-        case "default":
-            EmptyProperty(node: attribute).build()
-        case "defer":
-            EmptyProperty(node: attribute).build()
         case "dir":
-            TypeProperty<Direction>(node: attribute).build()
-        case "disabled":
-            EmptyProperty(node: attribute).build()
-        case "download":
-            EmptyProperty(node: attribute).build()
+            TypeProperty<TextDirection>(node: attribute).build()
         case "draggable":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Draggable>(node: attribute).build()
         case "enctype":
-            TypeProperty<Encoding>(node: attribute).build()
-        case "enterkeyhint":
-            TypeProperty<Hint>(node: attribute).build()
-        case "for":
-            ValueProperty(node: attribute).build()
-        case "form":
-            ValueProperty(node: attribute).build()
-        case "formaction":
-            ValueProperty(node: attribute).build()
-        case "headers":
-            ValueProperty(node: attribute).build()
-        case "height":
-            ValueProperty(node: attribute).build()
-        case "hidden":
-            EmptyProperty(node: attribute).build()
-        case "high":
-            ValueProperty(node: attribute).build()
-        case "href":
-            ValueProperty(node: attribute).build()
-        case "hreflang":
-            TypeProperty<Language>(node: attribute).build()
-        case "id":
-            ValueProperty(node: attribute).build()
-        case "ismap":
-            EmptyProperty(node: attribute).build()
-        case "inputmode":
-            ValueProperty(node: attribute).build()
-        case "is":
-            ValueProperty(node: attribute).build()
-        case "itemid":
-            ValueProperty(node: attribute).build()
-        case "itemproperty":
-            ValueProperty(node: attribute).build()
-        case "itemref":
-            ValueProperty(node: attribute).build()
-        case "itemscope":
-            ValueProperty(node: attribute).build()
-        case "itemtype":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Enctype>(node: attribute).build()
+        case "http-equiv":
+            TypeProperty<SwiftHtml.Meta.HttpEquiv>(node: attribute).build()
         case "kind":
-            ValueProperty(node: attribute).build()
-        case "label":
-            ValueProperty(node: attribute).build()
-        case "lang":
-            TypeProperty<Language>(node: attribute).build()
-        case "list":
-            ValueProperty(node: attribute).build()
-        case "loop":
-            EmptyProperty(node: attribute).build()
-        case "low":
-            ValueProperty(node: attribute).build()
-        case "max":
-            ValueProperty(node: attribute).build()
-        case "media":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Track.Kind>(node: attribute).build()
         case "method":
-            TypeProperty<Method>(node: attribute).build()
-        case "min":
-            ValueProperty(node: attribute).build()
-        case "multiple":
-            EmptyProperty(node: attribute).build()
-        case "muted":
-            EmptyProperty(node: attribute).build()
+            TypeProperty<SwiftHtml.Method>(node: attribute).build()
         case "name":
-            
-            if let parent = attribute.parent {
-                
-                switch parent.localName {
-                case "meta":
-//                    TypeProperty<Names>(node: attribute).build()
-                    TypeProperty<Meta.Name>(node: attribute).build()
-                default:
-                    ValueProperty(node: attribute).build()
-                }
-            }
-            
-        case "nonce":
-            ValueProperty(node: attribute).build()
-        case "novalidate":
-            EmptyProperty(node: attribute).build()
-        case "open":
-            ValueProperty(node: attribute).build()
-        case "optimum":
-            ValueProperty(node: attribute).build()
-        case "pattern":
-            ValueProperty(node: attribute).build()
-        case "part":
-            ValueProperty(node: attribute).build()
-        case "ping":
-            ValueProperty(node: attribute).build()
-        case "placeholder":
-            ValueProperty(node: attribute).build()
-        case "poster":
-            ValueProperty(node: attribute).build()
+           if let parent = attribute.parent {
+               switch parent.localName {
+               case "meta":
+                   TypeProperty<Meta.Name>(node: attribute).build()
+               default:
+                   ValueProperty(node: attribute).build()
+               }
+           }
         case "preload":
-            ValueProperty(node: attribute).build()
-        case "readonly":
-            EmptyProperty(node: attribute).build()
+            TypeProperty<Audio.Preload>(node: attribute).build()
         case "referrerpolicy":
-            TypeProperty<Policy>(node: attribute).build()
+            TypeProperty<RefererPolicy>(node: attribute).build()
         case "rel":
-            TypeProperty<Relation>(node: attribute).build()
-        case "required":
-            EmptyProperty(node: attribute).build()
+            TypeProperty<Link.Rel>(node: attribute).build()
         case "reversed":
-            EmptyProperty(node: attribute).build()
-        case "role":
-            TypeProperty<Roles>(node: attribute).build()
-        case "rows":
-            ValueProperty(node: attribute).build()
-        case "rowspan":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Ol.`Type`>(node: attribute).build()
         case "sandbox":
-            EmptyProperty(node: attribute).build()
+            TypeProperty<IframeSandbox>(node: attribute).build()
         case "scope":
-            TypeProperty<Scope>(node: attribute).build()
+            TypeProperty<Th.Scope>(node: attribute).build()
         case "shape":
-            TypeProperty<Shape>(node: attribute).build()
-        case "size":
-            ValueProperty(node: attribute).build()
-        case "sizes":
-            ValueProperty(node: attribute).build()
-        case "slot":
-            ValueProperty(node: attribute).build()
-        case "span":
-            ValueProperty(node: attribute).build()
-        case "spellcheck":
-            ValueProperty(node: attribute).build()
-        case "src":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Area.Shape>(node: attribute).build()
         case "start":
-            ValueProperty(node: attribute).build()
-        case "step":
-            ValueProperty(node: attribute).build()
-        case "style":
-            ValueProperty(node: attribute).build()
-        case "tabindex":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Ol.`Type`>(node: attribute).build()
         case "target":
             TypeProperty<Target>(node: attribute).build()
-        case "title":
-            ValueProperty(node: attribute).build()
         case "translate":
-            ValueProperty(node: attribute).build()
+            TypeProperty<Translate>(node: attribute).build()
         case "type":
-            
             if let parent = attribute.parent {
                 
                 switch parent.localName {
                 case "input":
-                    TypeProperty<Inputs>(node: attribute).build()
+                    TypeProperty<Input.`Type`>(node: attribute).build()
                 case "button":
-                    TypeProperty<Buttons>(node: attribute).build()
-                case "link":
-                    TypeProperty<Medias>(node: attribute).build()
-                case "script":
-                    TypeProperty<Medias>(node: attribute).build()
-                case "audio":
-                    TypeProperty<Medias>(node: attribute).build()
+                    TypeProperty<Button.`Type`>(node: attribute).build()
+//                case "link":
+//                    TypeProperty<Medias>(node: attribute).build()
+//                case "script":
+//                    TypeProperty<Medias>(node: attribute).build()
+//                case "audio":
+//                    TypeProperty<Medias>(node: attribute).build()
                 default:
                     ValueProperty(node: attribute).build()
                 }
             }
-            
-        case "value":
-            ValueProperty(node: attribute).build()
-        case "width":
-            ValueProperty(node: attribute).build()
         case "wrap":
-            TypeProperty<Wrapping>(node: attribute).build()
-        case "property":
-            TypeProperty<Graphs>(node: attribute).build()
-        case "charset":
-            //            TypeProperty<Charset>(node: attribute).build()
+            TypeProperty<Textarea.Wrap>(node: attribute).build()
+        
+        // MARK: - String
+        case "accesskey", "accept", "action", "alt", "cite", "class", "content", "data", "datetime", "for", "form", "formaction", "headers", "href", "hreflang", "id", "label", "lang", "list", "max", "media", "min", "open", "pattern", "ping", "placeholder", "poster", "sizes", "src", "style", "title", "value", "charset":
             ValueProperty(node: attribute).build()
-        case "http-equiv":
-            TypeProperty<Equivalent>(node: attribute).build()
-        case "selected":
-            EmptyProperty(node: attribute).build()
+        
+        // TODO: list of doubles
+        case "coords":
+            ValueProperty(node: attribute).build()
+        
+        // TODO: doesn't exist
+        case "enterkeyhint", "inputmode", "is", "itemid", "itemproperty", "itemref", "itemscope", "itemtype", "nonce", "part", "role", "slot", "property":
+            ValueProperty(node: attribute).build()
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+            
+        
+        
+            
+        
+        
+        
+        
+        
         default:
             CustomProperty(node: attribute).build()
         }
@@ -381,6 +267,43 @@ extension Converter {
                     let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
                                         .condensingWhitespace()
                     if cleanText.contains("\"") {
+                        "Text(#\"\(cleanText)\")#\n"
+                    } else {
+                        "Text(\"\(cleanText)\")\n"
+                    }
+                } else {
+                    "Text(\"\"\"\n\(text)\"\"\")\n"
+                }
+            }
+        }
+    }
+    
+    private struct ArgumentElement {
+        
+        private var text: String? {
+            
+            guard let text = node.stringValue else {
+                return nil
+            }
+            
+            return text
+        }
+        
+        private let node: XMLNode
+        
+        internal init(node: XMLNode) {
+            self.node = node
+        }
+        
+        @StringBuilder internal func build() -> String {
+            
+            
+            
+            if let text = text {
+                if node.parent?.localName != "pre" {
+                    let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        .condensingWhitespace()
+                    if cleanText.contains("\"") {
                         "#\"\(cleanText)\"#\n"
                     } else {
                         "\"\(cleanText)\"\n"
@@ -420,8 +343,8 @@ extension Converter {
                 return nil
             }
             
-            return children.map { child in
-                return Converter.default.decode(element: child)
+            return children.compactMap { child in
+                ArgumentElement(node: child).build()
             }
         }
         
@@ -728,7 +651,7 @@ extension Converter {
         
     }
     
-    private struct ValueIntegerProperty{
+    private struct ValueBasicTypeProperty<T: HaveInit>{
         
         private var name: String? {
             
@@ -756,8 +679,8 @@ extension Converter {
         @StringBuilder internal func build() -> String {
             
             if let name = name, let value = value {
-                if let intValue = Int(value){
-                    ".\(name)(\(intValue))\n"
+                if let tValue = T(value){
+                    ".\(name)(\(tValue))\n"
                 }
                 
             } else if let name = name{
