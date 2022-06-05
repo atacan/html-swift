@@ -748,7 +748,7 @@ extension Converter {
         
         @StringBuilder internal func build() -> String {
             if let name = name {
-                ".(\"\(name)\", \"\(value ?? "")\")\n"
+                ".attribute(\"\(name)\", \"\(value ?? "")\")\n"
             }
         }
     }
