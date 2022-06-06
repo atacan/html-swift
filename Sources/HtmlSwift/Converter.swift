@@ -33,16 +33,44 @@ public class Converter {
     
     private init() {}
     
+    /// if the tag doesn't have a closing slash, add it. img, link etc. usually have this problem
+    public func closeOpenTags(input: String) throws -> String {
+        let tagsToClose = ["area", "base", "br", "col", "command", "embed", "hr", "img", "input", "keygen", "link", "meta", "param", "source", "track", "wbr"]
+        let tagsToCloseRegex = tagsToClose.joined(separator: "|")
+        // couldn't use string interpolation because of unescaped characters
+        let pattern = #"<(?tags?)(([\w\W]+?))>"#.replacingOccurrences(of: "?tags?", with: tagsToCloseRegex)
+        
+        let regex = try NSRegularExpression(pattern: pattern, options: [])
+        let nsrange = NSRange(input.startIndex ..< input.endIndex, in: input)
+        let inputNS = input as NSString
+        let matches = regex.matches(in: input, options: [], range: nsrange)
+        
+        var output = input
+        
+        for match in matches {
+            let inputMatch = inputNS.substring(with: match.range)
+            if !inputMatch.hasSuffix("/>") {
+                let new = inputMatch.replacingOccurrences(of: ">", with: "/>")
+                output = output.replacingOccurrences(of: inputMatch, with: new)
+            }
+        }
+        
+        return output
+    }
+
+    
     /// The whole html string needs to be inside a tag.
     /// For example, multiple `div`s will give an error. They need to be inside another `div`.
     public func convert(html: String) throws -> String {
-        let document = try XMLDocument(xmlString: html, options: [.documentIncludeContentTypeDeclaration])
+        let input = try closeOpenTags(input: html)
+        let document = try XMLDocument(xmlString: input, options: [.documentIncludeContentTypeDeclaration])
         guard let root = document.rootElement() else {
             throw Errors.rootNotFound
         }
         
         var content = Converter.default.decode(element: root)
-        content = try format(content) // SwiftFormat library
+        // Add indentions etc. with the SwiftFormat library
+        content = try format(content)
         return content
     }
     
