@@ -57,12 +57,22 @@ public class Converter {
         
         return output
     }
-
+    
+    /// replace `&` with `&amp;` etc.
+    public func replaceSpecialCharaters(input: String) -> String {
+        var output = input
+        let replace = ["&" : "&amp;"]
+        for (key, value) in replace  {
+            output = output.replacingOccurrences(of: key, with: value)
+        }
+        return output
+    }
     
     /// The whole html string needs to be inside a tag.
     /// For example, multiple `div`s will give an error. They need to be inside another `div`.
     public func convert(html: String) throws -> String {
-        let input = try closeOpenTags(input: html)
+        var input = try closeOpenTags(input: html)
+        input = replaceSpecialCharaters(input: input)
         let document = try XMLDocument(xmlString: input, options: [.documentIncludeContentTypeDeclaration])
         guard let root = document.rootElement() else {
             throw Errors.rootNotFound
