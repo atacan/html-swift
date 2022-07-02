@@ -68,11 +68,31 @@ public class Converter {
         return output
     }
     
+    public func extendSingleParameters(input: String) throws -> String {
+        var output = input
+        let pattern = #"<script[^>]*async[^>]*>[^<]*<\/script>"#
+        
+        let regex = try NSRegularExpression(pattern: pattern, options: [])
+        let nsrange = NSRange(input.startIndex ..< input.endIndex, in: input)
+        let inputNS = input as NSString
+        let matches = regex.matches(in: input, options: [], range: nsrange)
+        
+        for match in matches {
+            let inputMatch = inputNS.substring(with: match.range)
+            let new = inputMatch.replacingOccurrences(of: "async", with: #"async = "async""#)
+            output = output.replacingOccurrences(of: inputMatch, with: new)
+        }
+        
+        return output
+    }
+
+    
     /// The whole html string needs to be inside a tag.
     /// For example, multiple `div`s will give an error. They need to be inside another `div`.
     public func convert(html: String) throws -> String {
         var input = try closeOpenTags(input: html)
         input = replaceSpecialCharaters(input: input)
+        input = try extendSingleParameters(input: input)
         let document = try XMLDocument(xmlString: input, options: [.documentIncludeContentTypeDeclaration])
         guard let root = document.rootElement() else {
             throw Errors.rootNotFound
@@ -88,7 +108,7 @@ public class Converter {
         switch attribute.localName {
         // MARK: - Bool
 
-        case "async", "autocomplete", "checked", "contenteditable", "spellcheck":
+        case "autocomplete", "checked", "contenteditable", "spellcheck":
             ValueBasicTypeProperty<Bool>(node: attribute).build()
         
         // MARK: - Int
@@ -103,7 +123,7 @@ public class Converter {
         
         // MARK: - No Value
 
-        case "autofocus", "autoplay", "controls", "default", "defer", "disabled", "download", "hidden", "ismap", "loop", "multiple", "muted", "novalidate", "readonly", "required", "selected":
+        case "async", "autofocus", "autoplay", "controls", "default", "defer", "disabled", "download", "hidden", "ismap", "loop", "multiple", "muted", "novalidate", "readonly", "required", "selected":
             EmptyProperty(node: attribute).build()
         
         // MARK: - Custom Type
