@@ -70,17 +70,24 @@ public class Converter {
     
     public func extendSingleParameters(input: String) throws -> String {
         var output = input
-        let pattern = #"<script[^>]*async[^>]*>[^<]*<\/script>"#
+        let patterns = ["async" : #"<script[^>]*async[^>]*>[^<]*<\/script>"#,
+                        "crossorigin" : #"<(link|img)[^>]*crossorigin[^>]*>"#]
+        let replacements = ["async" : #"async = "async""#,
+                            "crossorigin" : #"crossorigin = "anonymous""#]
         
-        let regex = try NSRegularExpression(pattern: pattern, options: [])
-        let nsrange = NSRange(input.startIndex ..< input.endIndex, in: input)
-        let inputNS = input as NSString
-        let matches = regex.matches(in: input, options: [], range: nsrange)
-        
-        for match in matches {
-            let inputMatch = inputNS.substring(with: match.range)
-            let new = inputMatch.replacingOccurrences(of: "async", with: #"async = "async""#)
-            output = output.replacingOccurrences(of: inputMatch, with: new)
+        for (attribute, pattern) in patterns {
+            let regex = try NSRegularExpression(pattern: pattern, options: [])
+            let nsrange = NSRange(input.startIndex ..< input.endIndex, in: input)
+            let inputNS = input as NSString
+            let matches = regex.matches(in: input, options: [], range: nsrange)
+            
+            for match in matches {
+                let inputMatch = inputNS.substring(with: match.range)
+                if let replace = replacements[attribute] {
+                    let new = inputMatch.replacingOccurrences(of: attribute, with: replace)
+                    output = output.replacingOccurrences(of: inputMatch, with: new)
+                }
+            }
         }
         
         return output
@@ -128,6 +135,8 @@ public class Converter {
         
         // MARK: - Custom Type
 
+        case "crossorigin":
+            TypeProperty<Crossorigin>(node: attribute).build()
         case "dir":
             TypeProperty<TextDirection>(node: attribute).build()
         case "draggable":
@@ -560,7 +569,7 @@ extension Converter {
                         } else if attribute.name == "alt" {
                             output = output.replacingOccurrences(of: "?alt?", with: attribute.stringValue!)
                         } else {
-                            output += "\n" + ValueProperty(node: attribute).build()
+                            output += Converter.default.decode(attribute: attribute)
                         }
                     }
                     return output.replacingOccurrences(of: ", alt: \"?alt?\"", with: "")
@@ -607,7 +616,7 @@ extension Converter {
                                 output = output.replacingOccurrences(of: "?rel?", with: ".\(type)")
                             }
                         } else {
-                            output += "\n" + ValueProperty(node: attribute).build()
+                            output += Converter.default.decode(attribute: attribute)
                         }
                     }
                     return output
@@ -686,11 +695,7 @@ extension Converter {
         
         @StringBuilder internal func build() -> String {
             if let name = name, let value = value {
-                if value == "false" || value == "true" {
-                    ".\(name)(\(value))\n"
-                } else {
-                    ".\(name)(\"\(value)\")\n"
-                }
+                ".\(name)(\"\(value)\")\n"
                 
             } else if let name = name {
                 ".\(name)()"
