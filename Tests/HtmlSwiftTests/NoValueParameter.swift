@@ -17,6 +17,7 @@ final class TestNoValueParameters: XCTestCase {
             <title>Document</title>
         </head>
         <body>
+            <div mynonexistent="valueIn">Test Div</div>
             <script src='https://www.google-analytics.com/analytics.js' async></script>
         </body>
         </html>
