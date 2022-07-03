@@ -68,10 +68,11 @@ public class Converter {
         return output
     }
     
+    /// attributes that have a default value but XML parser expects an explicit value
     public func extendSingleParameters(input: String) throws -> String {
         var output = input
         let patterns = ["async" : #"<script[^>]*async[^>]*>[^<]*<\/script>"#,
-                        "crossorigin" : #"<(link|img)[^>]*crossorigin[^>]*>"#]
+                        "crossorigin" : #"<(link|img)[^>]*crossorigin(?![^>]*anonymous)[^>]*>"#]
         let replacements = ["async" : #"async = "async""#,
                             "crossorigin" : #"crossorigin = "anonymous""#]
         
@@ -94,8 +95,7 @@ public class Converter {
     }
 
     
-    /// The whole html string needs to be inside a tag.
-    /// For example, multiple `div`s will give an error. They need to be inside another `div`.
+    /// convert a string of html code
     public func convert(html: String) throws -> String {
         var input = try closeOpenTags(input: html)
         input = replaceSpecialCharaters(input: input)
