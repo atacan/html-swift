@@ -15,8 +15,8 @@ let package = Package(
             targets: ["HtmlSwift"]),
     ],
     dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/binarybirds/swift-html", from: "1.6.0"),
+        .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.4.3"),
+        .package(url: "https://github.com/pointfreeco/swift-html", from: "0.4.0"),
         .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.49.0"),
     ],
     targets: [
@@ -24,7 +24,8 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
             name: "HtmlSwift",
-            dependencies: [.product(name: "SwiftHtml", package: "swift-html"),
+            dependencies: ["SwiftSoup",
+                            .product(name: "Html", package: "swift-html"),
                            .product(name: "SwiftFormat", package: "SwiftFormat"),]),
         .testTarget(
             name: "HtmlSwiftTests",
