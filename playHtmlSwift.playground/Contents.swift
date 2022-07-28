@@ -28,11 +28,13 @@ func content(of element: Element) -> [String] {
 /// `.name(attributes : [.key("value"), .key("value")], "text node text", children-repeat)`
 struct BasicElement {
     let element: SwiftSoup.Element
-    var swiftContent: [String] = []
-    var swiftCode: String = ""
+    var swiftCode: String
+    var swiftContent: [String]
     
     init(element: Element) {
         self.element = element
+        self.swiftCode = ""
+        self.swiftContent = []
         
         swiftContent.append(attributesArgument)
         
@@ -75,7 +77,7 @@ struct BasicElement {
 }
 
 //let html = #"<div><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p></div>"#
-let html = #"<div><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p><a href="url">link text</a></div>"#
+let html = #"<div><h1>Heading One where</h1><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p><a href="url">link text</a><fieldset disabled name="blob"></fieldset></div>"#
 let soup = try SwiftSoup.parse(html)
 let element = soup.child(0)//.child(1).child(0).child(0).child(0)
 let swiftCode = BasicElement(element: element).swiftCode
