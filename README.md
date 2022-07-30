@@ -15,7 +15,7 @@ let htmlInput = """
 <a href="url">link text</a>
 <br>
 """
-let swiftOutput = try convert(html: htmlInput)
+let swiftOutput = try convertToPointFree(html: htmlInput)
 ```
 ->
 ```swift
