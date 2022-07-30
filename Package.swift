@@ -16,7 +16,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.4.3"),
-        .package(url: "https://github.com/pointfreeco/swift-html", from: "0.4.0"),
+        .package(url: "https://github.com/atacan/pointfreeco-swift-html", from: "0.4.0"),
+                 .package(url: "https://github.com/atacan/BinaryBirds-swift-html", from: "1.6.0"),
         .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.49.0"),
     ],
     targets: [
@@ -25,10 +26,15 @@ let package = Package(
         .target(
             name: "HtmlSwift",
             dependencies: ["SwiftSoup",
-                            .product(name: "Html", package: "swift-html"),
+                            .product(name: "Html", package: "pointfreeco-swift-html"),
+                           .product(name: "SwiftHtml", package: "BinaryBirds-swift-html"),
                            .product(name: "SwiftFormat", package: "SwiftFormat"),]),
         .testTarget(
             name: "HtmlSwiftTests",
-            dependencies: ["HtmlSwift"]),
+            dependencies: ["HtmlSwift"],
+            resources: [
+                .process("HtmlFiles")
+            ]
+        ),
     ]
 )

@@ -1,0 +1,352 @@
+<div class="d-pt4 d-pb4 m-pt3 m-pb3"><h1 class="fg-black bold ts-d-r2 ts-m-r1_5 lh-2"><a href="https://www.pointfree.co/blog/posts/78-reverse-engineering-swiftui-s-navigationpath-codability">Reverse Engineering SwiftUI’s NavigationPath Codability</a></h1><div class="flex items-baseline" style="flex-direction:row"><div><p>Tuesday Jul 12, 2022</p></div><div class="m-ml1"><a href="https://twitter.com/intent/tweet?text=Reverse%20Engineering%20SwiftUI%E2%80%99s%20NavigationPath%20Codability&amp;url=https://www.pointfree.co/blog/posts/78-reverse-engineering-swiftui-s-navigationpath-codability&amp;via=pointfreeco" onclick="window.open(
+  &quot;https://twitter.com/intent/tweet?text=Reverse%20Engineering%20SwiftUI%E2%80%99s%20NavigationPath%20Codability&amp;url=https://www.pointfree.co/blog/posts/78-reverse-engineering-swiftui-s-navigationpath-codability&amp;via=pointfreeco&quot;,
+  &quot;newwindow&quot;,
+  &quot;width=500,height=500&quot;
+);" target="_blank" rel="noopener noreferrer" class="lh-1 relative medium inline-block align-top" style="-webkit-box-sizing:border-box;-moz-box-sizing:border-box;-ms-box-sizing:border-box;-o-box-sizing:border-box;box-sizing:border-box;color:#ffffff;background-color:#0c7abf;height:20px;padding-top:1px;padding-right:8px;padding-bottom:1px;padding-left:6px;border-top-left-radius:3px;border-top-right-radius:3px;border-bottom-right-radius:3px;border-bottom-left-radius:3px;font-size:16px"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3MiA3MiI+PHBhdGggZmlsbD0ibm9uZSIgZD0iTTAgMGg3MnY3MkgweiIvPjxwYXRoIGNsYXNzPSJpY29uIiBmaWxsPSIjZmZmIiBkPSJNNjguODEyIDE1LjE0Yy0yLjM0OCAxLjA0LTQuODcgMS43NDQtNy41MiAyLjA2IDIuNzA0LTEuNjIgNC43OC00LjE4NiA1Ljc1Ny03LjI0My0yLjUzIDEuNS01LjMzIDIuNTkyLTguMzE0IDMuMTc2QzU2LjM1IDEwLjU5IDUyLjk0OCA5IDQ5LjE4MiA5Yy03LjIzIDAtMTMuMDkyIDUuODYtMTMuMDkyIDEzLjA5MyAwIDEuMDI2LjExOCAyLjAyLjMzOCAyLjk4QzI1LjU0MyAyNC41MjcgMTUuOSAxOS4zMTggOS40NCAxMS4zOTZjLTEuMTI1IDEuOTM2LTEuNzcgNC4xODQtMS43NyA2LjU4IDAgNC41NDMgMi4zMTIgOC41NTIgNS44MjQgMTAuOS0yLjE0Ni0uMDctNC4xNjUtLjY1OC01LjkzLTEuNjQtLjAwMi4wNTYtLjAwMi4xMS0uMDAyLjE2MyAwIDYuMzQ1IDQuNTEzIDExLjYzOCAxMC41MDQgMTIuODQtMS4xLjI5OC0yLjI1Ni40NTctMy40NS40NTctLjg0NSAwLTEuNjY2LS4wNzgtMi40NjQtLjIzIDEuNjY3IDUuMiA2LjUgOC45ODUgMTIuMjMgOS4wOS00LjQ4MiAzLjUxLTEwLjEzIDUuNjA1LTE2LjI2IDUuNjA1LTEuMDU1IDAtMi4wOTYtLjA2LTMuMTIyLS4xODQgNS43OTQgMy43MTcgMTIuNjc2IDUuODgyIDIwLjA2NyA1Ljg4MiAyNC4wODMgMCAzNy4yNS0xOS45NSAzNy4yNS0zNy4yNSAwLS41NjUtLjAxMy0xLjEzMy0uMDM4LTEuNjkzIDIuNTU4LTEuODQ3IDQuNzc4LTQuMTUgNi41MzItNi43NzR6Ii8+PC9zdmc+" alt="" style="width:14px;height:14px;font-size:16px;top:1px" class="relative inline-block"><span style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;line-height:18px;margin-left:3px" class="inline-block align-top">Tweet</span></a></div></div><div style="width:3rem;height:2px" class="bg-green m-mb3"></div><div class="bg-white"><div><div class=" md-ctn"><p>iOS 16 introduced brand new navigation tools that aim to model stack-based navigation with simple collection-based APIs. One of those tools is <a href="https://developer.apple.com/documentation/swiftui/navigationpath"><code>NavigationPath</code></a>, which is a fully type-erased collection of data that allows you to drive navigation with state without coupling unrelated views together.</p>
+<p>An interesting feature of <code>NavigationPath</code> is that it is capable of encoding and decoding itself to JSON, even though all of its type information has been erased. This is powerful because it makes state restoration as simple as serializing and deserializing data, but how does it work?</p>
+<p>Join us for a deep dive into some of Swift’s hidden runtime functions and Swift 5.7’s new existential tools so that we can reverse engineer <code>NavigationPath</code>’s codability. A compilable <a href="https://gist.github.com/mbrandonw/ed5d14b86e263fa6df008329cba74142">gist</a> is available to following along too.</p>
+<h2>NavigationPath codability</h2>
+<p><code>NavigationPath</code> is a collection-like type of fully type-erased data that exposes a few simple methods. You create one without specifying what kind of data it holds:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">var</span> path <span class="token operator">=</span> <span class="token class-name">NavigationPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+<p>And you are free to add any data you want to the path, as long as it is <code>Hashable</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift">path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"hello"</span></span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+</code></pre>
+<p>You can even append custom data types:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">struct</span> <span class="token class-name">User</span><span class="token punctuation">:</span> <span class="token class-name">Hashable</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> id<span class="token punctuation">:</span> <span class="token class-name">Int</span>
+  <span class="token keyword">var</span> name<span class="token punctuation">:</span> <span class="token class-name">String</span>
+<span class="token punctuation">}</span>
+
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token class-name">User</span><span class="token punctuation">(</span>id<span class="token punctuation">:</span> <span class="token number">42</span><span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token string-literal"><span class="token string">"Blob"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Although <code>NavigationPath</code> exposes some collection-like methods, such as <code>append</code>, <code>remove</code> and <code>count</code>, it does not allow you to actually iterate over its elements. This may be just an oversight right now (we’ve filed a <a href="https://gist.github.com/mbrandonw/f8b94957031160336cac6898a919cbb7#file-fb10395052-md">feedback</a>!), but even if its elements were exposed they would be given to us as <code>any Hashable</code> values. That is, they have lost all of their type information except for the fact that they are <code>Hashable</code>.</p>
+<p>However, even though all of the type information has been erased, <code>NavigationPath</code> has the magical ability to encode its data to JSON, and even more magically, decode back into a fully-formed <code>NavigationPath</code> with data and static types intact!</p>
+<p>This is done by accessing the <code>codable</code> property on <code>NavigationPath</code>, which returns an optional value:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift">path<span class="token punctuation">.</span>codable <span class="token comment">// nil</span>
+</code></pre>
+<p>Currently this value is <code>nil</code> because the <code>User</code> struct we defined earlier does not conform to <code>Codable</code>, and a warning is even printed in the logs explaining as such:</p>
+<blockquote>
+<p><code>Cannot create CodableRepresentation of navigation path, because presented value of type "User" is not Codable.</code></p>
+</blockquote>
+<p><code>NavigationPath</code> requires that everything you append to it be <code>Codable</code> in order for its magic trick to work. So, let’s make the <code>User</code> struct <code>Codable</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">struct</span> <span class="token class-name">User</span><span class="token punctuation">:</span> <span class="token class-name">Codable</span><span class="token punctuation">,</span> <span class="token class-name">Hashable</span> <span class="token punctuation">{</span>
+  <span class="token code-fold">…</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>Now <code>codable</code> returns something non-<code>nil</code> called <code>CodableRepresentation</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift">path<span class="token punctuation">.</span>codable <span class="token comment">// NavigationPath.CodableRepresentation</span>
+</code></pre>
+<p>This is the thing that you can actually feed to a <code>JSONEncoder</code> to turn into JSON data:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>codable<span class="token operator">!</span><span class="token punctuation">)</span> <span class="token comment">// 120 bytes</span>
+</code></pre>
+<p>And we can feed this data to a <code>String</code> initializer to see the actual JSON string representation:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token function">print</span><span class="token punctuation">(</span>
+  <span class="token class-name">String</span><span class="token punctuation">(</span>
+    decoding<span class="token punctuation">:</span> <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>codable<span class="token operator">!</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span>
+  <span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<pre>[
+  "User",
+  "{\"id\":42,\"name\":\"Blob\"}",
+  "Swift.Bool",
+  "true",
+  "Swift.Int",
+  "42",
+  "Swift.String",
+  "\"hello\""
+]
+</pre>
+</blockquote>
+<p>Every piece of data we added to the path was serialized into a flat array containing both a string representation of the name of the type and a string representation of its JSON. For example, our <code>User</code> value was serialized into a pair of array elements for the type name and the JSON of the id and name:</p>
+<blockquote>
+<pre>"User",
+"{\"id\":42,\"name\":\"Blob\"}",
+</pre>
+</blockquote>
+<p>It’s interesting that even though <code>NavigationPath</code> has no type information about the elements it holds, it can still somehow detect when the element conforms to <code>Encodable</code> and encode it.</p>
+<p>Even more interesting, it can do the opposite!</p>
+<p>It can somehow take the nebulous blob of text and turn it back into statically typed values, such as honest strings, ints, bools and even the <code>User</code> struct. That seems a quite magical.</p>
+<p>To see this concretely we can take the nebulous JSON string of data and turn it back into a navigation path:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> decodedPath <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">NavigationPath</span><span class="token punctuation">(</span>
+  <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>
+    <span class="token class-name">NavigationPath</span><span class="token punctuation">.</span><span class="token class-name">CodableRepresentation</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">,</span>
+    from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>
+      <span class="token string-literal"><span class="token string">#"""
+      [
+        "User","{\"id\":42,\"name\":\"Blob\"}",
+        "Swift.Bool","true",
+        "Swift.Int","123",
+        "Swift.String","\"Hello\""
+      ]
+      """#</span></span><span class="token punctuation">.</span>utf8
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<p>It’s pretty incredible this is possible. We can take this newly formed path, stick it into a <code>NavigationStack</code>, and then the actual, statically typed values will be passed to <code>navigationDestination</code> so that we can construct views for each destination:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token class-name">List</span> <span class="token punctuation">{</span>
+  <span class="token code-fold">…</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">.</span><span class="token function">navigationDestination</span><span class="token punctuation">(</span><span class="token keyword">for</span><span class="token punctuation">:</span> <span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> string <span class="token keyword">in</span>
+  <span class="token class-name">Text</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"String view: </span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation">string</span><span class="token interpolation-punctuation punctuation">)</span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">.</span><span class="token function">navigationDestination</span><span class="token punctuation">(</span><span class="token keyword">for</span><span class="token punctuation">:</span> <span class="token class-name">Int</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> int <span class="token keyword">in</span>
+  <span class="token class-name">Text</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"Int view: </span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation">int</span><span class="token interpolation-punctuation punctuation">)</span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">.</span><span class="token function">navigationDestination</span><span class="token punctuation">(</span><span class="token keyword">for</span><span class="token punctuation">:</span> <span class="token class-name">Bool</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> bool <span class="token keyword">in</span>
+  <span class="token class-name">Text</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"Bool view: </span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation"><span class="token class-name">String</span><span class="token punctuation">(</span>describing<span class="token punctuation">:</span> bool<span class="token punctuation">)</span></span><span class="token interpolation-punctuation punctuation">)</span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">.</span><span class="token function">navigationDestination</span><span class="token punctuation">(</span><span class="token keyword">for</span><span class="token punctuation">:</span> <span class="token class-name">User</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> user <span class="token keyword">in</span>
+  <span class="token class-name">Text</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"User view: </span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation"><span class="token class-name">String</span><span class="token punctuation">(</span>describing<span class="token punctuation">:</span> user<span class="token punctuation">)</span></span><span class="token interpolation-punctuation punctuation">)</span><span class="token string">"</span></span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<h2>Encoding and decoding <code>Any</code></h2>
+<p>Is it possible to recreate this seemingly magical functionality ourselves? Can we really take a nebulous blob of stringy JSON and turn it into values with static types? Well, the answer is yes, by using a little bit of runtime magic and Swift’s new existential super powers.</p>
+<p>Let’s start with a simple wrapper around an array of fully type-erased <code>Any</code> values, as well as a method for appending an <code>Any</code> to the end of the array:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">struct</span> <span class="token class-name">NavPath</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> elements<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token keyword">Any</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+  <span class="token keyword">mutating</span> <span class="token keyword">func</span> <span class="token function-definition function">append</span><span class="token punctuation">(</span><span class="token omit keyword">_</span> newElement<span class="token punctuation">:</span> <span class="token keyword">Any</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">self</span><span class="token punctuation">.</span>elements<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>newElement<span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>What would it take to implement an <code>Encodable</code> conformance on this type so that it encodes as a flat array of strings that alternate between a description of a type and the JSON encoding of a value:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">extension</span> <span class="token class-name">NavPath</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span> <span class="token punctuation">{</span>
+  <span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token punctuation">(</span>to encoder<span class="token punctuation">:</span> <span class="token class-name">Encoder</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token punctuation">{</span>
+    <span class="token comment">// ???</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>We can start with an unkeyed container since we want to encode to an array:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token punctuation">(</span>to encoder<span class="token punctuation">:</span> <span class="token class-name">Encoder</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> container <span class="token operator">=</span> encoder<span class="token punctuation">.</span><span class="token function">unkeyedContainer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>And we can iterate over the elements of the path, but in reverse because for whatever reason <code>NavigationPath</code> encodes its elements in reverse order:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token punctuation">(</span>to encoder<span class="token punctuation">:</span> <span class="token class-name">Encoder</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> container <span class="token operator">=</span> encoder<span class="token punctuation">.</span><span class="token function">unkeyedContainer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token keyword">for</span> element <span class="token keyword">in</span> elements<span class="token punctuation">.</span><span class="token function">reversed</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>For each element in the array we need to first encode the name of the type, and then encode its JSON representation as a string.</p>
+<p>We can use an underscored Swift <a href="https://github.com/apple/swift/blob/c8f4b09809de1fab3301c0cfc483986aa6bdecfa/stdlib/public/core/Misc.swift#L87-L94">function</a> that is capable of turning a type into a string. Although <code>element</code> is a fully erased <code>Any</code> value, we can get its runtime type using the <code>type(of:)</code> function, and then encode its string name:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span><span class="token function">_mangledTypeName</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> element<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Next we want to try to encode the element into a JSON string. First we need to check if the element is <code>Encodable</code> to begin with, which we can do easily thanks to Swift’s new powerful existential type features:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">guard</span> <span class="token keyword">let</span> element <span class="token operator">=</span> element <span class="token keyword">as</span><span class="token operator">?</span> <span class="token keyword">any</span> <span class="token class-name">Encodable</span>
+<span class="token keyword">else</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throw</span> <span class="token class-name">EncodingError</span><span class="token punctuation">.</span><span class="token function">invalidValue</span><span class="token punctuation">(</span>
+    element<span class="token punctuation">,</span> <span class="token punctuation">.</span><span class="token keyword">init</span><span class="token punctuation">(</span>
+      codingPath<span class="token punctuation">:</span> container<span class="token punctuation">.</span>codingPath<span class="token punctuation">,</span>
+      debugDescription<span class="token punctuation">:</span> <span class="token string-literal"><span class="token string">"</span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation"><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> element<span class="token punctuation">)</span></span><span class="token interpolation-punctuation punctuation">)</span><span class="token string"> is not encodable."</span></span>
+    <span class="token punctuation">)</span>
+  <span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>If we get past this guard, then we can encode the element into a JSON string, and then encode that into our container:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>
+  <span class="token class-name">String</span><span class="token punctuation">(</span>decoding<span class="token punctuation">:</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<p>This completes the <code>Encodable</code> conformance for <code>NavPath</code>, and amazingly it works just like <code>NavigationPath</code>’s conformance:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">var</span> path <span class="token operator">=</span> <span class="token class-name">NavPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string-literal"><span class="token string">"Hello"</span></span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token number">42</span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token class-name">User</span><span class="token punctuation">(</span>id<span class="token punctuation">:</span> <span class="token number">42</span><span class="token punctuation">,</span> name<span class="token punctuation">:</span> <span class="token string-literal"><span class="token string">"Blob"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span>
+<span class="token function">print</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">(</span>decoding<span class="token punctuation">:</span> data<span class="token punctuation">,</span> <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<pre>[
+  "11nav_codable4UserV",
+  "{\"id\":42,\"name\":\"Blob\"}",
+  "Sb",
+  "true",
+  "Si",
+  "42",
+  "SS",
+  "\"Hello\""
+]
+</pre>
+</blockquote>
+<p>We are able to encode all the values even though we are storing them as fully type-erased <code>Any</code> values internally.</p>
+<p>And if we try appending something that is not <code>Encodable</code>, like say <code>Void</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift">path<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Then we get an encoding error letting us know exactly what went wrong:</p>
+<blockquote>
+<code>
+invalidValue((), Context(codingPath: [], debugDescription: <strong>"() is not encodable."</strong>, underlyingError: nil))
+</code>
+</blockquote>
+<p>We are halfway towards our goal of reverse engineering <code>NavigationPath</code>. Next we need to make <code>NavPath</code> conform to the <code>Decodable</code> protocol:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">extension</span> <span class="token class-name">NavPath</span><span class="token punctuation">:</span> <span class="token class-name">Decodable</span> <span class="token punctuation">{</span>
+  <span class="token keyword">init</span><span class="token punctuation">(</span>from decoder<span class="token punctuation">:</span> <span class="token class-name">Decoder</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token punctuation">{</span>
+    <span class="token comment">// ???</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>We can start by getting an unkeyed container since we are trying to decode a flat array of strings, and we will start the path’s elements off as an empty array:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">init</span><span class="token punctuation">(</span>from decoder<span class="token punctuation">:</span> <span class="token class-name">Decoder</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token punctuation">{</span>
+  <span class="token keyword">var</span> container <span class="token operator">=</span> <span class="token keyword">try</span> decoder<span class="token punctuation">.</span><span class="token function">unkeyedContainer</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token keyword">self</span><span class="token punctuation">.</span>elements <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>We can iterate over the unkeyed container while it still has elements to process:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">while</span> <span class="token operator">!</span>container<span class="token punctuation">.</span>isAtEnd <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>In here we can try decoding a string from the container, which should be the name of the type that we want to decode:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> typeName <span class="token operator">=</span> <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Just as there is an underscored Swift function for turning a type into a string, there is also <a href="https://github.com/apple/swift/blob/c8f4b09809de1fab3301c0cfc483986aa6bdecfa/stdlib/public/core/Misc.swift#L118-L127">one</a> that goes in the reverse direction, but it is failable because the string may not represent a type known to Swift:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> typeName <span class="token operator">=</span> <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token keyword">guard</span> <span class="token keyword">let</span> type <span class="token operator">=</span> <span class="token function">_typeByName</span><span class="token punctuation">(</span>typeName<span class="token punctuation">)</span>
+<span class="token keyword">else</span> <span class="token punctuation">{</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>But we don’t want to allow just any type here. We only want to consider those types that are <code>Decodable</code>, and if we encounter a non-<code>Decodable</code> type it is a decoding error. We can do this by once again using Swift’s powerful existential type features by casting the <code>Any.Type</code> given to us by <code>_typeByName</code> into an <code>any Decodable.Type</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> typeName <span class="token operator">=</span> <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token keyword">guard</span> <span class="token keyword">let</span> type <span class="token operator">=</span> <span class="token function">_typeByName</span><span class="token punctuation">(</span>typeName<span class="token punctuation">)</span> <span class="token keyword">as</span><span class="token operator">?</span> <span class="token keyword">any</span> <span class="token class-name">Decodable</span><span class="token punctuation">.</span><span class="token keyword">Type</span>
+<span class="token keyword">else</span> <span class="token punctuation">{</span>
+  <span class="token keyword">throw</span> <span class="token class-name">DecodingError</span><span class="token punctuation">.</span><span class="token function">dataCorruptedError</span><span class="token punctuation">(</span>
+    <span class="token keyword">in</span><span class="token punctuation">:</span> container<span class="token punctuation">,</span>
+    debugDescription<span class="token punctuation">:</span> <span class="token string-literal"><span class="token string">"</span><span class="token interpolation-punctuation punctuation">\(</span><span class="token interpolation">typeName</span><span class="token interpolation-punctuation punctuation">)</span><span class="token string"> is not decodable."</span></span>
+  <span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>If we get past this guard it means that the type is <code>Decodable</code>, so we can get the next string in the container, try decoding it, and then insert it at the beginning of the <code>elements</code> array since encoding was reversed:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> encodedValue <span class="token operator">=</span> <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token keyword">let</span> value <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>encodedValue<span class="token punctuation">.</span>utf8<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">self</span><span class="token punctuation">.</span>elements<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> at<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span>
+</code></pre>
+<p>This completes the second half of reverse engineering <code>NavigationPath</code>. We can now decode nebulous JSON data back into <code>NavPath</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> decodedPath <span class="token operator">=</span> <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>
+  <span class="token class-name">NavPath</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">,</span>
+  from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>
+    <span class="token string-literal"><span class="token string">#"""
+    [
+      "11nav_codable4UserV", "{\"id\":42,\"name\":\"Blob\"}",
+      "Sb", "true",
+      "Si", "42",
+      "SS", "\"Hello\""
+    ]
+    """#</span></span><span class="token punctuation">.</span>utf8
+  <span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<p><code>NavPath(elements: [1, "Hello", true, User(id: 42, name: "Blob")])</code></p>
+</blockquote>
+<p>And we can verify that all of the type information is retained because we can cast each element in the path to the type we expect:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift">decodedPath<span class="token punctuation">.</span>elements<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">Int</span>    <span class="token comment">// 1</span>
+decodedPath<span class="token punctuation">.</span>elements<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span> <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">String</span> <span class="token comment">// "Hello"</span>
+decodedPath<span class="token punctuation">.</span>elements<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">Bool</span>   <span class="token comment">// true</span>
+decodedPath<span class="token punctuation">.</span>elements<span class="token punctuation">[</span><span class="token number">3</span><span class="token punctuation">]</span> <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">User</span>   <span class="token comment">// User(id: 42, name: "Blob")</span>
+</code></pre>
+<p>We were able to build up an array of <code>Any</code> values that still secretly retain their static types if we cast them, all from a string that holds onto a heterogenous array of types and values.</p>
+<h2>Pre-Swift 5.7 existentials</h2>
+<p>All of the above was accomplished in just a few lines of code thanks to Swift 5.7’s greatly improved ability to handle existential types in an ergonomic way. If you are curious how we could have reverse engineered <code>NavigationPath</code> without those tools…</p>
+<details>
+<summary>
+Follow us down the rabbit hole of pre-Swift 5.7 existentials... 🐰🕳
+</summary>
+<p>If we try to compile the current code in Swift 5.6 we get an error on the following line:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> string <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">String</span><span class="token punctuation">(</span>
+  decoding<span class="token punctuation">:</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element<span class="token punctuation">)</span><span class="token punctuation">,</span>
+  <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span>
+<span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<p>🛑 Protocol ‘Encodable’ as a type cannot conform to the protocol itself</p>
+</blockquote>
+<p>This is because <code>element</code> is of type <code>any Encodable</code>, not a concrete type that conforms to the <code>Encodable</code> protocol. When you write:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> value<span class="token punctuation">:</span> <span class="token keyword">any</span> <span class="token class-name">Encodable</span> <span class="token operator">=</span> <span class="token number">1</span>
+</code></pre>
+<p>…you are simultaneously doing two things: first you are choosing a particular type in the infinite expanse of all types that conform to the <code>Encodable</code> protocol, and then you are choosing a value in that type. This is different enough from concrete types, where you simply write:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> value<span class="token punctuation">:</span> <span class="token class-name">Int</span> <span class="token operator">=</span> <span class="token number">1</span>
+</code></pre>
+<p>…that it warrants a different type of syntax, <code>any Encodable</code>, and a different name, “existential type”.</p>
+<p>In 5.7, Swift is capable of seamlessly translating from the existential type to the concrete type, but in Swift &lt;5.7 we have to do a little bit of extra work.</p>
+<p>Although <code>element</code> is partially erased to just an <code>any Encodable</code>, we can still access its dynamic runtime type with <a href="https://developer.apple.com/documentation/swift/type(of:)"><code>type(of:)</code></a>. What if we could “peek” into the dynamic type of <code>value</code> and turn it into a static type <code>A</code>:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token function">peek</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> element<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span> <span class="token keyword">in</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>Here we using a theoretical <code>peek</code> function to peek into the dynamic type <code>type(of: value)</code> to get an actual static type <code>A</code>.</p>
+<p>Even if we had a <code>peek</code> function, this couldn’t possibly work because closures can’t introduce generics in Swift. But, we can define a little local function that is capable of introducing generics:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token function">peek</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> encode<span class="token punctuation">)</span>
+</code></pre>
+<p>Then we could perform the encoding logic inside the helper function with the generic:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token operator">-&gt;</span> <span class="token class-name">Data</span> <span class="token punctuation">{</span>
+  <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">A</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token function">peek</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> encode<span class="token punctuation">)</span>
+</code></pre>
+<p>This is all still theoretical, but if this was possible we have somehow magically turned a dynamic type into a static type, albeit in a roundabout way.</p>
+<p>Well, this theoretical tool does exist in pre-Swift 5.7, though it is underscored and has a strange name:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token operator">-&gt;</span> <span class="token class-name">Data</span> <span class="token punctuation">{</span>
+  <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">A</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token function">_openExistential</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> encode<span class="token punctuation">)</span>
+</code></pre>
+<p>This function allows us to peek into an <code>Any</code> type and get access to the actual static type of the underlying value. It’s underscored because the Swift team would rather have a nicer syntax for capturing its functionality, and that is precisely what Swift 5.7’s new existential tools brings to the table.</p>
+<p>The name is called <a href="https://github.com/apple/swift/blob/7cd3541c62276f53926bc6d0c9b3970d73dc2ea2/stdlib/public/core/Builtin.swift#L1003-L1016"><code>_openExistential</code></a> because its job is to take a peek inside a type that we know nothing about in order to figure out its actual static type. The term “existential” is borrowed from predicate logic in mathematics, and if you want to know more how the mathematics is connected to the types, checkout <a href="https://www.pointfree.co/episodes/ep196-async-composable-architecture-tasks">this week’s</a> episode.</p>
+<p>We can now finish the encoding by turning the data into a string and encoding that into the container:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token operator">-&gt;</span> <span class="token class-name">Data</span> <span class="token punctuation">{</span>
+  <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">A</span><span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token function">_openExistential</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> encode<span class="token punctuation">)</span>
+<span class="token keyword">let</span> string <span class="token operator">=</span> <span class="token class-name">String</span><span class="token punctuation">(</span>decoding<span class="token punctuation">:</span> data<span class="token punctuation">,</span> <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>string<span class="token punctuation">)</span>
+</code></pre>
+<p>We can even conditionally use Swift 5.7 features using a compiler directive:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token directive property"><span class="token directive-name">#if</span> swift<span class="token punctuation">(</span><span class="token operator">&lt;</span><span class="token number">5.7</span><span class="token punctuation">)</span></span>
+  <span class="token keyword">func</span> <span class="token function-definition function">encode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Encodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token operator">-&gt;</span> <span class="token class-name">Data</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element <span class="token keyword">as</span><span class="token operator">!</span> <span class="token class-name">A</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">let</span> data <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token function">_openExistential</span><span class="token punctuation">(</span><span class="token function">type</span><span class="token punctuation">(</span>of<span class="token punctuation">:</span> value<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> encode<span class="token punctuation">)</span>
+  <span class="token keyword">let</span> string <span class="token operator">=</span> <span class="token class-name">String</span><span class="token punctuation">(</span>decoding<span class="token punctuation">:</span> data<span class="token punctuation">,</span> <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+  <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>string<span class="token punctuation">)</span>
+<span class="token directive property"><span class="token directive-name">#else</span></span>
+  <span class="token keyword">let</span> string <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">String</span><span class="token punctuation">(</span>decoding<span class="token punctuation">:</span> <span class="token class-name">JSONEncoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>element<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">as</span><span class="token punctuation">:</span> UTF8<span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+  <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">encode</span><span class="token punctuation">(</span>string<span class="token punctuation">)</span>
+<span class="token directive property"><span class="token directive-name">#endif</span></span>
+</code></pre>
+<p>Next, we have the <code>Decodable</code> conformance. It currently does not compile in Swift 5.6 due to this line:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> value <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>encodedValue<span class="token punctuation">.</span>utf8<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<blockquote>
+<p>🛑 Cannot convert value of type ‘Decodable.Type’ to expected argument type ‘Any.Protocol’</p>
+<p>🛑 Protocol ‘Any’ as a type cannot conform to ‘Decodable’</p>
+</blockquote>
+<p>The error messages aren’t great, but the problem is the same as what we say for the <code>Encodable</code> conformance: Swift 5.6 can’t automatically open the existential for us, so we have to do it manually.</p>
+<p>The work is nearly identical to what we did for <code>Encodable</code>, and so we will immediately jump to the solution:</p>
+<pre class="language-swift" tabindex="0"><code class="language-swift"><span class="token keyword">let</span> encodedValue <span class="token operator">=</span> <span class="token keyword">try</span> container<span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">)</span>
+<span class="token directive property"><span class="token directive-name">#if</span> swift<span class="token punctuation">(</span><span class="token operator">&lt;</span><span class="token number">5.7</span><span class="token punctuation">)</span></span>
+  <span class="token keyword">func</span> <span class="token function-definition function">decode</span><span class="token operator">&lt;</span><span class="token class-name">A</span><span class="token punctuation">:</span> <span class="token class-name">Decodable</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token omit keyword">_</span><span class="token punctuation">:</span> <span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">Type</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token operator">-&gt;</span> <span class="token class-name">A</span> <span class="token punctuation">{</span>
+    <span class="token keyword">try</span> <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span><span class="token class-name">A</span><span class="token punctuation">.</span><span class="token keyword">self</span><span class="token punctuation">,</span> from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>encodedValue<span class="token punctuation">.</span>utf8<span class="token punctuation">)</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">let</span> value <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token function">_openExistential</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> <span class="token keyword">do</span><span class="token punctuation">:</span> decode<span class="token punctuation">)</span>
+<span class="token directive property"><span class="token directive-name">#else</span></span>
+  <span class="token keyword">let</span> value <span class="token operator">=</span> <span class="token keyword">try</span> <span class="token class-name">JSONDecoder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">decode</span><span class="token punctuation">(</span>type<span class="token punctuation">,</span> from<span class="token punctuation">:</span> <span class="token class-name">Data</span><span class="token punctuation">(</span>encodedValue<span class="token punctuation">.</span>utf8<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token directive property"><span class="token directive-name">#endif</span></span>
+<span class="token keyword">self</span><span class="token punctuation">.</span>elements<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> at<span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">)</span>
+</code></pre>
+<p>And that is all it takes to support existential codability in Swift 5.6 and lower. It’s pretty amazing to see how much more ergonomic existentials are in Swift 5.7.</p>
+</details>
+<h2>Existential super powers</h2>
+<p>It’s incredible to see what Swift 5.7’s existential types unlock. They allow us to create an interface that for all intents and purposes is dynamic, being an array of <code>Any</code> values, while simultaneously being able to pull static type information from it when needed. This allows for building tools that are both flexible and safe, such as <code>NavigationStack</code>, which helps decouple domains in a navigation stack while simultaneously retaining type information to pass to destination views.</p>
+<p>In this week’s <a href="https://www.pointfree.co/episodes/ep196-async-composable-architecture-tasks">episode</a> we explored another application of existential types, wherein we somewhat weaken result types used in the Composable Architecture while not losing the ability to maintain equatability, which is a vital feature for performance and testing in the library. Both of these use cases are only scratching the surface of what is possible with existential types in Swift.</p>
+</div></div></div></div>
+
+<div class="m-pt2 m-pb2"><div><p class="fg-gray400 fg-black normal h6 lh-4">Monday May 2, 2022</p></div><h1 class="fg-black bold ts-d-r1_25 ts-m-r1 lh-1"><a href="https://www.pointfree.co/blog/posts/75-open-sourcing-urlrouting-and-vaporrouting">Open Sourcing URLRouting and VaporRouting</a></h1><div><p class="fg-black normal h5 lh-4">Introducing new routing libraries that make client-side and server-side routing easy with more type safety and less fuss.</p></div></div>
