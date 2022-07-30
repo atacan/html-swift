@@ -27,7 +27,7 @@ let html = #"""
 
 let soup = try SwiftSoup.parse(html)
 let element = soup.child(0)//.child(1).child(0).child(0).child(0)
-let swiftCode = try convert(html: html, component: .onlyHead)
+let swiftCode = try convertToPointFree(html: html, component: .onlyHead)
 print(swiftCode)
 try "import Cool; let hello = \"World\" " |> swiftFormat
 "".isEmpty
