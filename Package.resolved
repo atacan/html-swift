@@ -1,9 +1,18 @@
 {
   "pins" : [
     {
-      "identity" : "swift-html",
+      "identity" : "binarybirds-swift-html",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/pointfreeco/swift-html",
+      "location" : "https://github.com/atacan/BinaryBirds-swift-html",
+      "state" : {
+        "revision" : "e07678a77d296e66fa891a9d4d08acc4471d1783",
+        "version" : "1.6.11"
+      }
+    },
+    {
+      "identity" : "pointfreeco-swift-html",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/atacan/pointfreeco-swift-html",
       "state" : {
         "revision" : "f53c38c4b841841f36afa1866093c908cadaa736",
         "version" : "0.4.0"

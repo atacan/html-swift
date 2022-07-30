@@ -1,90 +1,59 @@
 import HtmlSwift
 import SwiftSoup
 import SwiftFormat
+import Html
 
-
-func content(of element: Element) -> [String] {
-    let children = element.getChildNodes()
-    var output = [String]()
-    for child in children {
-        if let n = child as? DataNode {
-            let data = n.getWholeData() |> addQuote
-            output.append(data)
-        }
-        if let n = child as? TextNode {
-            let text = n.text() |> addQuote
-            output.append(text)
-        }
-        if let n = child as? Element {
-            let nextElement = BasicElement(element: n)
-            output.append(nextElement.swiftCode)
-        }
-    }
-    return output
-}
-
-
-/// most common element in swift-html syntax
-/// `.name(attributes : [.key("value"), .key("value")], "text node text", children-repeat)`
-struct BasicElement {
-    let element: SwiftSoup.Element
-    var swiftCode: String
-    var swiftContent: [String]
-    
-    init(element: Element) {
-        self.element = element
-        self.swiftCode = ""
-        self.swiftContent = []
-        
-        swiftContent.append(attributesArgument)
-        
-        childrenCode()
-        
-        let content = swiftContent
-            .filter { !$0.isEmpty}
-            .joined(separator: ", ")
-        
-        self.swiftCode = nameStart + content + nameEnd
-    }
-    
-    var nameStart: String {
-        "\n.\(element.nodeName())(\n"
-    }
-    
-    var nameEnd: String {
-        "\n)"
-    }
-    
-    var attributesArgument: String {
-        if let attributes = element.getAttributes(),
-           attributes.size() > 0 {
-            let attributeList = attributes.map { attribute in
-                let key = attribute.getKey()
-                let value = attribute.getValue() |> addQuote
-                return ".\(key)(\(value))"
-            }
-                .joined(separator: ", ")
-            return "attributes: [\(attributeList)]"
-        }
-        return ""
-    }
-    
-    mutating func childrenCode() {
-        let childContent = content(of: element)
-        swiftContent.append(contentsOf: childContent)
-    }
-    
-}
 
 //let html = #"<div><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p></div>"#
-let html = #"<div><h1>Heading One where</h1><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p><a href="url">link text</a><fieldset disabled name="blob"></fieldset></div>"#
+//let html = #"<div><h1>Heading One where</h1><p>The <abbr title="Amazing Inc.">AI</abbr> was founded in 1945.</p><br><a href="url">link text</a><fieldset disabled name="blob"></fieldset></div>"#
+let html = #"""
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Free Web tutorials">
+  <meta name="keywords" content="HTML, CSS, JavaScript">
+  <meta content="John Doe" name="author" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+"""#
+//let html = """
+//        <address>
+//        Written by <a href="mailto:webmaster@example.com">Jon Doe</a>.<br>
+//        Visit us at:<br>
+//        Example.com<br>
+//        Box 564, Disneyland<br>
+//        USA
+//        </address>
+//"""
+
 let soup = try SwiftSoup.parse(html)
 let element = soup.child(0)//.child(1).child(0).child(0).child(0)
-let swiftCode = BasicElement(element: element).swiftCode
-//print(swiftCode)
-print(try SwiftFormat.format(swiftCode, rules: FormatRules.default,
-                             options: FormatOptions(
-                                 wrapArguments: .beforeFirst,
-                                 wrapCollections: .beforeFirst
-                             ),
-                             lineRange: nil))
+let swiftCode = try convert(html: html, component: .onlyHead)
+print(swiftCode)
+try "import Cool; let hello = \"World\" " |> swiftFormat
+"".isEmpty
+
+let pointFree: Html.Node = .document(
+    .html(
+        .head(
+            .meta(
+                attributes: [.charset(.init(rawValue: "UTF-8"))]
+            ),
+            .meta(
+                name: "description", content: "Free Web tutorials"
+            ),
+            .meta(
+                name: "keywords", content: "HTML, CSS, JavaScript"
+            ),
+            .meta(
+                name: "author", content: "John Doe"
+            ),
+            .meta(
+                name: "viewport", content: "width=device-width, initial-scale=1.0"
+            )
+        ),
+        .body(
+        )
+    )
+)
+
+print(render(pointFree))
