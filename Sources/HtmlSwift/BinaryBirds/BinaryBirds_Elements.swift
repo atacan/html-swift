@@ -105,7 +105,7 @@ struct LinkElement {
         {
             let attributeList = attributes.map { attribute in
                 guard attribute.getKey() != "rel" else {
-                    relArgument = EnumAttribute<SwiftHtml.Link.Rel>(attribute: attribute).value(of: attribute)
+                    relArgument = EnumAttribute<SwiftHtml.Link.Rel>(attribute: attribute).value(of: attribute) ?? (attribute.getValue() |> addQuote)
                     return String()
                 }
                 return codeOfAttributeBinaryBirds(attribute, of: element)

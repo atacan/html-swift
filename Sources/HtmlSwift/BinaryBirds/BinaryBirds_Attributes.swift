@@ -40,3 +40,39 @@ struct EmptyAttribute_BinaryBirds: Attributing {
         swiftCode = "\n.\(key)()"
     }
 }
+
+/// has predefined values in an enum
+struct EnumAttribute_BinaryBirds<T: RawRepresentable>: Attributing {
+    var swiftCode: String
+    let attribute: SwiftSoup.Attribute
+    
+    init(attribute: Attribute) {
+        self.attribute = attribute
+        swiftCode = ""
+        let key: String = attribute.getKey() |> camelCased
+        let value = value(of: attribute)
+        
+        if let value = value {
+            swiftCode = ".\(key)(\(value))"
+        } else {
+            swiftCode = UndefinedAttribute_BinaryBirds(attribute: attribute).swiftCode
+        }
+        
+    }
+    
+    func value(of attribute: SwiftSoup.Attribute) -> String? {
+        let value = attribute.getValue()
+        
+        if let type = T(rawValue: value as! T.RawValue) {
+            return ".\(type)"
+        } else if let type = T(rawValue: value.lowercased() as! T.RawValue) {
+            return ".\(type)"
+        } else if let type = T(rawValue: value.uppercased() as! T.RawValue) {
+            return ".\(type)"
+        } else if let type = T(rawValue: "" as! T.RawValue) {
+            return ".\(type)"
+        } else {
+            return nil
+        }
+    }
+}
