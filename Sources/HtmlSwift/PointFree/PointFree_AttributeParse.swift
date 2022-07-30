@@ -6,7 +6,7 @@ import Foundation
 import Html
 import SwiftSoup
 
-public func codeOfAttribute(_ attribute: SwiftSoup.Attribute, of element: Element) -> String {
+func codeOfAttribute(_ attribute: SwiftSoup.Attribute, of element: Element) -> String {
     switch attribute.getKey() {
         // MARK: Bool
 

@@ -6,7 +6,7 @@
 import SwiftSoup
 import SwiftFormat
 
-public func convert(html: String, component: HtmlOutputComponent = .fullHtml) throws -> String {
+public func convertToPointFree(html: String, component: HtmlOutputComponent = .fullHtml) throws -> String {
     let doc: SwiftSoup.Document = try SwiftSoup.parse(html)
     let root: SwiftSoup.Element?
     let decoded: String
@@ -35,21 +35,4 @@ public enum HtmlOutputComponent {
     case fullHtml
     case onlyBody
     case onlyHead
-}
-
-public func swiftFormat(_ input: String) throws -> String {
-    let formatted = try SwiftFormat.format(
-        input,
-        rules: FormatRules.default,
-        options: FormatOptions(
-            wrapArguments: .beforeFirst,
-            wrapCollections: .beforeFirst
-        ),
-        lineRange: nil
-    )
-    return formatted
-}
-
-enum ConvertError: Error {
-    case soupParse(String)
 }

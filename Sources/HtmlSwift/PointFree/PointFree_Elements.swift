@@ -105,7 +105,7 @@ private func content(of element: Element) -> [String] {
             }
         }
         if let n = child as? Element {
-            switch child.nodeName() {
+            switch n.nodeName() {
             case "br":
                 output.append(".br")
             case "meta":

@@ -4,6 +4,7 @@
 
 import Foundation
 import Html
+import SwiftFormat
 	
 // MARK: Generic Functions
 infix operator <|: infixr0
@@ -90,6 +91,23 @@ public func removeHead(_ input: String) -> String {
         .trimmingCharacters(in: .whitespacesAndNewlines)
         .removingPrefix(".head(")
         .removingSuffix(")")
+}
+
+public func swiftFormat(_ input: String) throws -> String {
+    let formatted = try SwiftFormat.format(
+        input,
+        rules: FormatRules.default,
+        options: FormatOptions(
+            wrapArguments: .beforeFirst,
+            wrapCollections: .beforeFirst
+        ),
+        lineRange: nil
+    )
+    return formatted
+}
+
+enum ConvertError: Error {
+    case soupParse(String)
 }
 
 // MARK: String Extensions
