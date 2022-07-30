@@ -40,6 +40,8 @@ func codeOfAttribute(_ attribute: SwiftSoup.Attribute, of element: Element) -> S
         return PredefinedMethodAttribute(attribute: attribute).swiftCode
     case "aria-activedescendant", "aria-controls", "aria-describedby", "aria-details", "aria-errormessage", "aria-flowto", "aria-keyshortcuts", "aria-label", "aria-labelledby", "aria-owns", "aria-placeholder", "aria-roledescription", "aria-valuetext":
         return PredefinedMethodAttribute(attribute: attribute).swiftCode
+    case "onabort", "onafterprint", "onbeforeprint", "onbeforeunload", "onblur", "oncanplay", "oncanplaythrough", "onchange", "onclick", "oncontextmenu", "oncopy", "oncuechange", "oncut", "ondblclick", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "ondurationchange", "onemptied", "onended", "onerror", "onfocus", "onhashchange", "oninput", "oninvalid", "onkeydown", "onkeypress", "onkeyup", "onload", "onloadeddata", "onloadedmetadata", "onloadstart", "onmessage", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onoffline", "ononline", "onpagehide", "onpageshow", "onpaste", "onpause", "onplay", "onplaying", "onpopstate", "onprogress", "onratechange", "onreset", "onresize", "onscroll", "onsearch", "onseeked", "onseeking", "onselect", "onstalled", "onstorage", "onsubmit", "onsuspend", "ontimeupdate", "ontoggle", "onunload", "onvolumechange", "onwaiting", "onwheel":
+        return PredefinedMethodAttribute(attribute: attribute).swiftCode
 
         // MARK: Enums
 
@@ -110,9 +112,8 @@ func codeOfAttribute(_ attribute: SwiftSoup.Attribute, of element: Element) -> S
     //        case "target":
     //            return EnumAttribute<Html.Attribute<AnyHasTarget>.Target>(attribute: attribute).swiftCode
 
-        
-        
         // MARK: Parent-dependent Attributes
+
     case "content":
         switch element.nodeName() {
         case "meta":
@@ -151,7 +152,10 @@ func codeOfAttribute(_ attribute: SwiftSoup.Attribute, of element: Element) -> S
         }
 
         // MARK: default
+
     default:
         return UndefinedAttribute(attribute: attribute).swiftCode
     }
 }
+
+private enum Events {}

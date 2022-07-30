@@ -17,10 +17,25 @@ struct PredefinedMethodAttribute_BinaryBirds: Attributing {
     }
 }
 
+struct PredefinedMethodCaseChangeAttribute_BinaryBirds<T: RawRepresentable>: Attributing {
+    let attribute: SwiftSoup.Attribute
+    let swiftCode: String
+
+    init(attribute: SwiftSoup.Attribute) {
+        self.attribute = attribute
+        if let key = T(rawValue: attribute.getKey() as! T.RawValue) {
+            let value: String = attribute.getValue() |> addQuote
+            swiftCode = "\n.\(key)(\(value))"
+        } else {
+            swiftCode = UndefinedAttribute_BinaryBirds(attribute: attribute).swiftCode
+        }
+    }
+}
+
 struct UndefinedAttribute_BinaryBirds: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let key = attribute.getKey() |> addQuote
@@ -32,7 +47,7 @@ struct UndefinedAttribute_BinaryBirds: Attributing {
 struct EmptyAttribute_BinaryBirds: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let key = attribute.getKey()
@@ -45,24 +60,23 @@ struct EmptyAttribute_BinaryBirds: Attributing {
 struct EnumAttribute_BinaryBirds<T: RawRepresentable>: Attributing {
     var swiftCode: String
     let attribute: SwiftSoup.Attribute
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         swiftCode = ""
         let key: String = attribute.getKey() |> camelCased
         let value = value(of: attribute)
-        
+
         if let value = value {
             swiftCode = ".\(key)(\(value))"
         } else {
             swiftCode = UndefinedAttribute_BinaryBirds(attribute: attribute).swiftCode
         }
-        
     }
-    
+
     func value(of attribute: SwiftSoup.Attribute) -> String? {
         let value = attribute.getValue()
-        
+
         if let type = T(rawValue: value as! T.RawValue) {
             return ".\(type)"
         } else if let type = T(rawValue: value.lowercased() as! T.RawValue) {
