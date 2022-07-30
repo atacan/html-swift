@@ -54,7 +54,7 @@ func codeOfAttributeBinaryBirds(_ attribute: SwiftSoup.Attribute, of element: El
         case "referrerpolicy":
             return EnumAttribute<RefererPolicy>(attribute: attribute).swiftCode
         case "rel":
-            return EnumAttribute<Link.Rel>(attribute: attribute).swiftCode
+            return EnumAttribute<A.Rel>(attribute: attribute).swiftCode
         case "reversed":
             return EnumAttribute<Ol.`Type`>(attribute: attribute).swiftCode
         case "sandbox":
