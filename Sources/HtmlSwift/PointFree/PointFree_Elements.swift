@@ -22,7 +22,7 @@ struct BasicElement {
             let attributeList = attributes.map { attribute in
                 codeOfAttribute(attribute, of: element)
             }
-            .joined(separator: ", ")
+            .joined(separator: ",\n")
             return "attributes: [\(attributeList)]"
         }
         return ""

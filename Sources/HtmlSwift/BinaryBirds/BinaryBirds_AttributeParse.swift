@@ -72,6 +72,11 @@ func codeOfAttributeBinaryBirds(_ attribute: SwiftSoup.Attribute, of element: El
         case "wrap":
             return EnumAttribute_BinaryBirds<Textarea.Wrap>(attribute: attribute).swiftCode
 
+        // MARK: Case Change String
+
+        case "onabort", "onafterprint", "onbeforeprint", "onbeforeunload", "onblur", "oncanplay", "oncanplaythrough", "onchange", "onclick", "oncontextmenu", "oncopy", "oncuechange", "oncut", "ondblclick", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "ondurationchange", "onemptied", "onended", "onerror", "onfocus", "onhashchange", "oninput", "oninvalid", "onkeydown", "onkeypress", "onkeyup", "onload", "onloadeddata", "onloadedmetadata", "onloadstart", "onmessage", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onoffline", "ononline", "onpagehide", "onpageshow", "onpaste", "onpause", "onplay", "onplaying", "onpopstate", "onprogress", "onratechange", "onreset", "onresize", "onscroll", "onsearch", "onseeked", "onseeking", "onselect", "onstalled", "onstorage", "onsubmit", "onsuspend", "ontimeupdate", "ontoggle", "onunload", "onvolumechange", "onwaiting", "onwheel":
+            return PredefinedMethodCaseChangeAttribute_BinaryBirds<Events>(attribute: attribute).swiftCode
+
         // MARK: Parent-dependent Attributes
 
         case "name":
@@ -107,8 +112,7 @@ func codeOfAttributeBinaryBirds(_ attribute: SwiftSoup.Attribute, of element: El
     }
 }
 
-
-enum IframeSandbox: String {
+private enum IframeSandbox: String {
     /// (no value)    Applies all restrictions
     case all
     /// Allows form submission
@@ -133,4 +137,77 @@ enum IframeSandbox: String {
     case allowTopNavigation
     /// Allows the iframe content to navigate its top-level browsing context, but only if initiated by user
     case allowTopNavigationByUserActivation
+}
+
+private enum Events: String {
+    case onAfterPrint = "onafterprint"
+    case onBeforePrint = "onbeforeprint"
+    case onBeforeUnload = "onbeforeunload"
+    case onError = "onerror"
+    case onHashChange = "onhashchange"
+    case onLoad = "onload"
+    case onMessage = "onmessage"
+    case onOffline = "onoffline"
+    case onOnline = "ononline"
+    case onPageHide = "onpagehide"
+    case onPageShow = "onpageshow"
+    case onPopState = "onpopstate"
+    case onResize = "onresize"
+    case onStorage = "onstorage"
+    case onUnload = "onunload"
+    case onBlur = "onblur"
+    case onChange = "onchange"
+    case onContextMenu = "oncontextmenu"
+    case onFocus = "onfocus"
+    case onInput = "oninput"
+    case onInvalid = "oninvalid"
+    case onReset = "onreset"
+    case onSearch = "onsearch"
+    case onSelect = "onselect"
+    case onSubmit = "onsubmit"
+    case onKeyDown = "onkeydown"
+    case onKeyPress = "onkeypress"
+    case onKeyUp = "onkeyup"
+    case onClick = "onclick"
+    case onDoubleClick = "ondblclick"
+    case onMouseDown = "onmousedown"
+    case onMouseMove = "onmousemove"
+    case onMouseOut = "onmouseout"
+    case onMouseOver = "onmouseover"
+    case onMouseUp = "onmouseup"
+    case onWheel = "onwheel"
+    case onDrag = "ondrag"
+    case onDragEnd = "ondragend"
+    case onDragEnter = "ondragenter"
+    case onDragLeave = "ondragleave"
+    case onDragOver = "ondragover"
+    case onDragStart = "ondragstart"
+    case onDrop = "ondrop"
+    case onScroll = "onscroll"
+    case onCopy = "oncopy"
+    case onCut = "oncut"
+    case onPaste = "onpaste"
+    case onAbort = "onabort"
+    case onCanPlay = "oncanplay"
+    case onCanPlaythrough = "oncanplaythrough"
+    case onCueChange = "oncuechange"
+    case onDurationChange = "ondurationchange"
+    case onEmptied = "onemptied"
+    case onEnded = "onended"
+    case onLoadedData = "onloadeddata"
+    case onLoadedMetadata = "onloadedmetadata"
+    case onLoadStart = "onloadstart"
+    case onPause = "onpause"
+    case onPlay = "onplay"
+    case onPlaying = "onplaying"
+    case onProgress = "onprogress"
+    case onRateChange = "onratechange"
+    case onSeeked = "onseeked"
+    case onSeeking = "onseeking"
+    case onStalled = "onstalled"
+    case onSuspend = "onsuspend"
+    case onTimeUpdate = "ontimeupdate"
+    case onVolumeChange = "onvolumechange"
+    case onWaiting = "onwaiting"
+    case onToggle = "ontoggle"
 }
