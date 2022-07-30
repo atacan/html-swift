@@ -86,6 +86,14 @@ public func removeBody(_ input: String) -> String {
         .removingSuffix(")")
 }
 
+public func removeBody_BinaryBirds(_ input: String) -> String {
+    return input
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .removingPrefix("Body {")
+        .removingPrefix("Body{")
+        .removingSuffix("}")
+}
+
 public func removeHead(_ input: String) -> String {
     return input
         .trimmingCharacters(in: .whitespacesAndNewlines)
