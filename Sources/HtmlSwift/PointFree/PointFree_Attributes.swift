@@ -40,10 +40,15 @@ struct EnumAttribute<T: RawRepresentable>: Attributing {
         let key: String = attribute.getKey() |> camelCased
         let value = value(of: attribute)
         
-        swiftCode = ".\(key)(\(value))"
+        if let value = value {
+            swiftCode = ".\(key)(\(value))"
+        } else {
+            swiftCode = UndefinedAttribute(attribute: attribute).swiftCode
+        }
+        
     }
     
-    func value(of attribute: SwiftSoup.Attribute) -> String {
+    func value(of attribute: SwiftSoup.Attribute) -> String? {
         let value = attribute.getValue()
         
         if let type = T(rawValue: value as! T.RawValue) {
@@ -55,7 +60,7 @@ struct EnumAttribute<T: RawRepresentable>: Attributing {
         } else if let type = T(rawValue: "" as! T.RawValue) {
             return ".\(type)"
         } else {
-            return value |> addQuote
+            return nil
         }
     }
 }
