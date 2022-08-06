@@ -1,4 +1,4 @@
-# HtmlSwiftPointFree
+# Html-Swift
 
 Input an Html code and get the Swift code for the following DSLs 
 * <a href="https://github.com/pointfreeco/swift-html">pointfreeco/swift-html</a> 
