@@ -31,7 +31,8 @@ public func convertToPointFree(html: String, component: HtmlOutputComponent = .f
     return try decoded |> swiftFormat
 }
 
-public enum HtmlOutputComponent {
+public enum HtmlOutputComponent: String, CaseIterable, Identifiable {
+    public var id: Self { self }
     case fullHtml
     case onlyBody
     case onlyHead
