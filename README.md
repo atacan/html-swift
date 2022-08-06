@@ -10,7 +10,7 @@ to generate that Html code.
 https://github.com/atacan/Dime-a-Dozen
 ### Package
 ```swift
-import HtmlSwiftPointFree
+import HtmlSwift
 let htmlInput = """
 <a href="url">link text</a>
 <br>
