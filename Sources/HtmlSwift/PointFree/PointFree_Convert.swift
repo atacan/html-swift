@@ -28,7 +28,7 @@ public func convertToPointFree(html: String, component: HtmlOutputComponent = .f
         throw ConvertError.soupParse("SwiftSoup no root element found")
     }
     
-    return try decoded |> swiftFormat
+    return try decoded.trimmingCharacters(in: .whitespacesAndNewlines) |> swiftFormat
 }
 
 public enum HtmlOutputComponent: String, CaseIterable, Identifiable {
