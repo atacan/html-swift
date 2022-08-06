@@ -33,7 +33,7 @@ public func convertToPointFree(html: String, component: HtmlOutputComponent = .f
 
 public enum HtmlOutputComponent: String, CaseIterable, Identifiable {
     public var id: Self { self }
-    case fullHtml
-    case onlyBody
-    case onlyHead
+    case fullHtml = "Full <html>"
+    case onlyBody = "Only <body>"
+    case onlyHead = "Only <head>"
 }
