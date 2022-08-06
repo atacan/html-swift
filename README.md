@@ -41,3 +41,5 @@ Without a converter, the only way to switch to the DSL world is to look at your 
 ## Contribution
 * Tests are incomplete. We need to test all the elements and attributes
 * The code has a lot of repeated components. Those can be put in functions maybe.
+## Credits
+Inspired by and adapted from <a href="https://github.com/vapor-community/HTMLKit/blob/main/Sources/HTMLKit/Internal/Features/Conversion/Converter.swift">HTMLKit</a>  
