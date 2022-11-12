@@ -10,14 +10,14 @@ to generate that Html code.
 https://github.com/atacan/Dime-a-Dozen
 ### Package
 ```swift
-import HtmlSwiftPointFree
+import HtmlSwift
 let htmlInput = """
 <a href="url">link text</a>
 <br>
 """
-let swiftOutput = try convertToPointFree(html: htmlInput)
+try convertToPointFree(html: htmlInput)
 ```
-->
+⤵
 ```swift
 .html(
     .head(
@@ -33,6 +33,22 @@ let swiftOutput = try convertToPointFree(html: htmlInput)
     )
 )
 ```
+ or
+```swift
+try convertToBinaryBirds(html: htmlInput)
+```
+⤵
+```swift
+Html {
+    Head()
+    Body {
+        A("link text")
+            .href("url")
+        Br()
+    }
+}
+```
+
 ## Use Cases
 * You have an html code base, maybe with a templating language, but you want to switch to pure Swift DSL.
 * You are using a CSS framework such as Bootstrap, and you copy paste the ready-made components you find.   
@@ -41,3 +57,5 @@ Without a converter, the only way to switch to the DSL world is to look at your 
 ## Contribution
 * Tests are incomplete. We need to test all the elements and attributes
 * The code has a lot of repeated components. Those can be put in functions maybe.
+## Credits
+Inspired by and adapted from <a href="https://github.com/vapor-community/HTMLKit/blob/main/Sources/HTMLKit/Internal/Features/Conversion/Converter.swift">HTMLKit</a>  
