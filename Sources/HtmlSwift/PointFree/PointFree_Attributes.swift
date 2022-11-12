@@ -14,16 +14,15 @@ protocol Attributing {
 struct PredefinedMethodAttribute: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: SwiftSoup.Attribute) {
         self.attribute = attribute
         let key: String = attribute.getKey() |> camelCased
-        let value: String =  attribute.getValue() |> addQuote
-        
-        if key |> isOneOf("style", "onafterprint", "onbeforeprint", "onbeforeunload", "onerror", "onhashchange", "onload", "onmessage", "onoffline", "ononline", "onpagehide", "onpageshow", "onpopstate", "onresize", "onstorage", "onunload", "onblur", "onchange", "oncontextmenu", "onfocus", "oninput", "oninvalid", "onreset", "onsearch", "onselect", "onsubmit", "onkeydown", "onkeypress", "onkeyup", "onclick", "ondblclick", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onwheel", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "onscroll", "oncopy", "oncut", "onpaste", "onabort", "oncanplay", "oncanplaythrough", "oncuechange", "ondurationchange", "onemptied", "onended", "onloadeddata", "onloadedmetadata", "onloadstart", "onpause", "onplay", "onplaying", "onprogress", "onratechange", "onseeked", "onseeking", "onstalled", "onsuspend", "ontimeupdate", "onvolumechange", "onwaiting", "ontoggle") {
+        let value: String = attribute.getValue() |> addQuote
+
+        if key |> isOneOfUnsafe {
             swiftCode = ".\(key)(unsafe: \(value))"
-        }
-        else {
+        } else {
             swiftCode = ".\(key)(\(value))"
         }
     }
@@ -33,24 +32,23 @@ struct PredefinedMethodAttribute: Attributing {
 struct EnumAttribute<T: RawRepresentable>: Attributing {
     var swiftCode: String
     let attribute: SwiftSoup.Attribute
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         swiftCode = ""
         let key: String = attribute.getKey() |> camelCased
         let value = value(of: attribute)
-        
+
         if let value = value {
             swiftCode = ".\(key)(\(value))"
         } else {
             swiftCode = UndefinedAttribute(attribute: attribute).swiftCode
         }
-        
     }
-    
+
     func value(of attribute: SwiftSoup.Attribute) -> String? {
         let value = attribute.getValue()
-        
+
         if let type = T(rawValue: value as! T.RawValue) {
             return ".\(type)"
         } else if let type = T(rawValue: value.lowercased() as! T.RawValue) {
@@ -69,19 +67,19 @@ struct EnumAttribute<T: RawRepresentable>: Attributing {
 struct StandardTypeAttribute<T: HaveInitOptional>: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let key: String = attribute.getKey() |> camelCased
         let value: String
-        
+
         let valueGet = attribute.getValue()
         if let typeValue = T(valueGet) {
             value = "\(typeValue)"
         } else {
             value = valueGet |> addQuote
         }
-        
+
         swiftCode = ".\(key)(\(value))"
     }
 }
@@ -90,13 +88,13 @@ struct StandardTypeAttribute<T: HaveInitOptional>: Attributing {
 struct StructAttribute: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
-        
+
         let key = attribute.getKey() |> camelCased
         let value = ".init(rawValue: \(attribute.getValue() |> addQuote))"
-        
+
         swiftCode = ".\(key)(\(value))"
     }
 }
@@ -104,7 +102,7 @@ struct StructAttribute: Attributing {
 struct UndefinedAttribute: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let key = attribute.getKey() |> addQuote
@@ -117,7 +115,7 @@ struct UndefinedAttribute: Attributing {
 struct AttributeMediaType: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let value = attribute.getValue()
@@ -130,11 +128,20 @@ struct AttributeMediaType: Attributing {
 struct FunctionArgumentAttribute: Attributing {
     let attribute: SwiftSoup.Attribute
     let swiftCode: String
-    
+
     init(attribute: Attribute) {
         self.attribute = attribute
         let key = attribute.getKey() |> camelCased
         let value = attribute.getValue() |> addQuote
         swiftCode = "\(key): \(value)"
+    }
+}
+
+private func isOneOfUnsafe(_ input: String) -> Bool {
+    switch input {
+    case "onabort", "onafterprint", "onbeforeprint", "onbeforeunload", "onblur", "oncanplay", "oncanplaythrough", "onchange", "onclick", "oncontextmenu", "oncopy", "oncuechange", "oncut", "ondblclick", "ondrag", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop", "ondurationchange", "onemptied", "onended", "onerror", "onfocus", "onhashchange", "oninput", "oninvalid", "onkeydown", "onkeypress", "onkeyup", "onload", "onloadeddata", "onloadedmetadata", "onloadstart", "onmessage", "onmousedown", "onmousemove", "onmouseout", "onmouseover", "onmouseup", "onoffline", "ononline", "onpagehide", "onpageshow", "onpaste", "onpause", "onplay", "onplaying", "onpopstate", "onprogress", "onratechange", "onreset", "onresize", "onscroll", "onsearch", "onseeked", "onseeking", "onselect", "onstalled", "onstorage", "onsubmit", "onsuspend", "ontimeupdate", "ontoggle", "onunload", "onvolumechange", "onwaiting", "onwheel", "script", "style":
+        return true
+    default:
+        return false
     }
 }
