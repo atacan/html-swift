@@ -33,7 +33,7 @@ func assertEqualSwift_BinaryBirds(html: String, shouldBe swiftShould: String, co
         case .onlyBody:
             swift = swift |> removeBody_BinaryBirds
         case .onlyHead:
-            break
+            swift = swift |> removeHead_BinaryBirds
         }
         XCTAssertEqual(swift.removingWhitespace(), swiftShould.removingWhitespace())
 //        XCTAssertEqual(swift.condensingWhitespace(), swiftShould.condensingWhitespace())

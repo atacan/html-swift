@@ -39,7 +39,7 @@ struct ParentOfOnlyText {
     init(element: Element) {
         self.element = element
         self.swiftCode = nameStart(element, brace: .rounded)
-            + (element.ownText() |> addQuote)
+        + ((element.ownText() + element.data()) |> addQuote)
             + nameEnd(element, brace: .rounded)
             + attributesArgument
     }
@@ -227,7 +227,7 @@ private func content(of element: Element) -> [String] {
                 output.append(Childless(element: n).swiftCode)
                 // if the only child is a text node, syntax is different
             } else if grandChildren.count == 1 {
-                if let _ = grandChildren[0] as? TextNode {
+                if grandChildren[0] is TextNode || grandChildren[0] is DataNode {
                     output.append(ParentOfOnlyText(element: n).swiftCode)
                 } else {
                     output.append(BinaryBasicElement(element: n).swiftCode)
