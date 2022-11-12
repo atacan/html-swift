@@ -151,4 +151,16 @@ final class BinaryBirdBasicTests: XCTestCase {
             
         assertEqualSwift_BinaryBirds(html: html, shouldBe: swift, component: .onlyBody)
     }
+    
+    func testStyleElement() throws {
+        let html = #"""
+        <style>
+        body{margin:0}
+        h1{font-size:2em;margin:.67em 0}
+        </style>
+        """#
+        let swift = #"Style("""body{margin:0} h1{font-size:2em;margin:.67em 0}""")"#
+        assertEqualSwift_BinaryBirds(html: html, shouldBe: swift, component: .onlyHead)
+    }
+
 }
