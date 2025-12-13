@@ -110,7 +110,7 @@ public func removeHead(_ input: String) -> String {
 }
 
 public func swiftFormat(_ input: String) throws -> String {
-    let formatted = try SwiftFormat.format(
+    let result = try SwiftFormat.format(
         input,
         rules: FormatRules.default,
         options: FormatOptions(
@@ -119,7 +119,7 @@ public func swiftFormat(_ input: String) throws -> String {
         ),
         lineRange: nil
     )
-    return formatted
+    return result.output
 }
 
 enum ConvertError: Error {

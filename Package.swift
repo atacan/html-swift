@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.4.3"),
-        .package(url: "https://github.com/atacan/pointfreeco-swift-html", from: "0.4.0"),
+        .package(url: "https://github.com/atacan/pointfreeco-swift-html", branch: "main"),
                  .package(url: "https://github.com/atacan/BinaryBirds-swift-html", from: "1.6.0"),
         .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.49.0"),
     ],
