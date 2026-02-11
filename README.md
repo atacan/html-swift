@@ -6,8 +6,12 @@ Input an Html code and get the Swift code for the following DSLs
 
 to generate that Html code.
 ## How to Use it
-### Mac App
-https://github.com/atacan/Dime-a-Dozen
+### Mac and iOS App
+
+Blissum has a tool to convert HTML to Swift code for the above libraries.
+
+https://actondon.com/apps/blissum
+
 ### Package
 ```swift
 import HtmlSwift
